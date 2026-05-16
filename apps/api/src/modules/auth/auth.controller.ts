@@ -145,7 +145,7 @@ export class AuthController {
     reply.setCookie(REFRESH_COOKIE_NAME, raw, {
       httpOnly: true,
       secure: this.cookieCfg.secure,
-      sameSite: "strict",
+      sameSite: this.cookieCfg.sameSite,
       path: REFRESH_COOKIE_PATH,
       maxAge: this.refreshTtlSeconds,
     });
@@ -155,7 +155,7 @@ export class AuthController {
     reply.clearCookie(REFRESH_COOKIE_NAME, {
       httpOnly: true,
       secure: this.cookieCfg.secure,
-      sameSite: "strict",
+      sameSite: this.cookieCfg.sameSite,
       path: REFRESH_COOKIE_PATH,
     });
   }

@@ -25,6 +25,7 @@ export interface JwtConfig {
 export interface CookieConfig {
   secret: string;
   secure: boolean; // Secure flag on cookies; true in prod, false in dev (http)
+  sameSite: "strict" | "lax" | "none";
 }
 
 export interface RedisConfig {
@@ -71,6 +72,12 @@ export default function configuration(): RootConfig {
     cookie: {
       secret: requireEnv("COOKIE_SECRET"),
       secure: nodeEnv === "production",
+      // SameSite=None is required when web and api are on different sites
+      // (e.g. separate Railway *.up.railway.app subdomains, which the public
+      // suffix list treats as cross-site). The /refresh route keeps an
+      // x-requested-with header check as CSRF defense.
+      sameSite:
+        (process.env.COOKIE_SAMESITE as CookieConfig["sameSite"]) ?? "strict",
     },
     redis: {
       url: process.env.REDIS_URL ?? "redis://localhost:6379",
