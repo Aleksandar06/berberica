@@ -1,37 +1,27 @@
-import { cn } from "@/components/ui/cn";
+import { Badge, type BadgeProps } from "@/components/ui/badge";
 
+const STATUS_MAP: Record<string, { label: string; variant: BadgeProps["variant"] }> = {
+  active: { label: "Active", variant: "success" },
+  suspended: { label: "Suspended", variant: "destructive" },
+  pending: { label: "Pending", variant: "warning" },
+  confirmed: { label: "Confirmed", variant: "success" },
+  cancelled: { label: "Cancelled", variant: "destructive" },
+  completed: { label: "Completed", variant: "neutral" },
+  no_show: { label: "No show", variant: "warning" },
+};
+
+/**
+ * Maps an API status string to a styled Badge. Kept as a separate
+ * component so any future status colour rules live in one place and
+ * call sites stay terse: `<StatusBadge status={booking.status} />`.
+ */
 export function StatusBadge({
   status,
   variant,
 }: {
   status: string;
-  variant?: "success" | "warning" | "danger" | "neutral";
+  variant?: BadgeProps["variant"];
 }) {
-  const map: Record<string, string> = {
-    success: "bg-emerald-100 text-emerald-800",
-    warning: "bg-amber-100 text-amber-800",
-    danger: "bg-red-100 text-red-800",
-    neutral: "bg-slate-100 text-slate-700",
-  };
-  const auto =
-    !variant && status === "active"
-      ? "success"
-      : !variant && (status === "suspended" || status === "cancelled")
-        ? "danger"
-        : !variant && (status === "pending" || status === "no_show")
-          ? "warning"
-          : !variant && status === "confirmed"
-            ? "success"
-            : "neutral";
-  const v = variant ?? auto;
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
-        map[v],
-      )}
-    >
-      {status}
-    </span>
-  );
+  const mapped = STATUS_MAP[status];
+  return <Badge variant={variant ?? mapped?.variant ?? "neutral"}>{mapped?.label ?? status}</Badge>;
 }

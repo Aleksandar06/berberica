@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageHeading } from "@/components/dashboard/page-heading";
 import { Spinner } from "@/components/ui/spinner";
+import { useConfirm } from "@/components/confirm-dialog";
 import { errorMessage, useToast } from "@/lib/ui/toast";
 
 const DAYS = [
@@ -112,6 +113,7 @@ export default function AvailabilityPage() {
         />
         <ItemTable
           empty="No weekly rules yet."
+          confirmTitle="Delete this working-hours rule?"
           rows={aggregate.data.rules.map((r) => ({
             id: r.id,
             cols: [
@@ -136,6 +138,7 @@ export default function AvailabilityPage() {
         />
         <ItemTable
           empty="No weekly breaks yet."
+          confirmTitle="Delete this break?"
           rows={aggregate.data.breaks.map((b) => ({
             id: b.id,
             cols: [
@@ -159,6 +162,7 @@ export default function AvailabilityPage() {
         />
         <ItemTable
           empty="No exceptions configured."
+          confirmTitle="Delete this exception?"
           rows={aggregate.data.exceptions.map((e) => ({
             id: e.id,
             cols: [
@@ -204,37 +208,48 @@ function Section({
 function ItemTable({
   rows,
   empty,
+  confirmTitle,
 }: {
   rows: Array<{ id: string; cols: string[]; onDelete: () => void }>;
   empty: string;
+  confirmTitle: string;
 }) {
+  const confirm = useConfirm();
   if (rows.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-slate-300 bg-white p-6 text-center text-sm text-slate-500">
+      <div className="rounded-2xl border border-dashed border-border bg-muted/30 p-6 text-center text-sm text-muted-foreground">
         {empty}
       </div>
     );
   }
   return (
-    <div className="rounded-lg border bg-white overflow-hidden">
+    <div className="rounded-2xl border border-border bg-card overflow-hidden">
       <table className="w-full text-sm">
         <tbody>
           {rows.map((r) => (
-            <tr key={r.id} className="border-b last:border-0">
+            <tr key={r.id} className="border-b border-border last:border-0">
               {r.cols.map((c, i) => (
-                <td key={i} className="p-3 text-slate-700">
+                <td key={i} className="p-3 text-foreground">
                   {c}
                 </td>
               ))}
               <td className="p-3 text-right">
-                <button
-                  onClick={() => {
-                    if (window.confirm("Delete this entry?")) r.onDelete();
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-destructive hover:bg-destructive/10"
+                  onClick={async () => {
+                    const ok = await confirm({
+                      title: confirmTitle,
+                      description: "This change applies immediately.",
+                      confirmText: "Delete",
+                      tone: "destructive",
+                    });
+                    if (ok) r.onDelete();
                   }}
-                  className="text-red-700 hover:underline text-sm"
                 >
                   Delete
-                </button>
+                </Button>
               </td>
             </tr>
           ))}

@@ -8,9 +8,10 @@ import { ApiError } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PageHeading } from "@/components/dashboard/page-heading";
+import { PageHeader } from "@/components/page-header";
 import { Spinner } from "@/components/ui/spinner";
 import { StatusBadge } from "@/components/dashboard/status-badge";
+import { useConfirm } from "@/components/confirm-dialog";
 import { errorMessage, useToast } from "@/lib/ui/toast";
 
 interface PageProps {
@@ -20,6 +21,7 @@ interface PageProps {
 export default function AdminTenantDetail({ params }: PageProps) {
   const { id } = use(params);
   const toast = useToast();
+  const confirm = useConfirm();
   const queryClient = useQueryClient();
   const tenant = useQuery({
     queryKey: ["admin-tenant", id],
@@ -95,7 +97,11 @@ export default function AdminTenantDetail({ params }: PageProps) {
 
   return (
     <>
-      <PageHeading
+      <PageHeader
+        breadcrumbs={[
+          { label: "Tenants", href: "/dashboard/admin/tenants" },
+          { label: t.name },
+        ]}
         title={t.name}
         description={
           <>
@@ -174,18 +180,20 @@ export default function AdminTenantDetail({ params }: PageProps) {
               <Button
                 variant="secondary"
                 className="w-full"
-                onClick={() => {
-                  if (
-                    window.confirm(
-                      "Suspend this tenant? Public storefront will return 403.",
-                    )
-                  ) {
-                    suspend.mutate();
-                  }
+                onClick={async () => {
+                  const ok = await confirm({
+                    title: "Suspend this tenant?",
+                    description:
+                      "Their public storefront will return a 403 until you reactivate them. Existing bookings stay intact.",
+                    confirmText: "Suspend tenant",
+                    tone: "destructive",
+                  });
+                  if (ok) suspend.mutate();
                 }}
                 disabled={suspend.isPending}
+                loading={suspend.isPending}
               >
-                {suspend.isPending ? "Suspending…" : "Suspend"}
+                Suspend
               </Button>
             ) : (
               <Button

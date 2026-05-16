@@ -23,6 +23,7 @@ export default async function BookPage({
   return (
     <BookingFlow
       tenantSlug={tenantSlug}
+      tenantName={profile.name}
       tenantTimezone={profile.timezone}
       services={services}
       staff={staff}

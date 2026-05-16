@@ -2,31 +2,29 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { DateTime } from "luxon";
+import { Calendar } from "lucide-react";
 import { useState } from "react";
 
 import { customerApi, type CustomerBooking } from "@/lib/api/customer";
-import { publicApi } from "@/lib/api/public";
-import type { PublicAvailabilitySlot } from "@/lib/api/types";
 import { ApiError } from "@/lib/api/client";
-import {
-  dateInZonePlusDays,
-  todayInZone,
-} from "@/lib/format/time";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Spinner } from "@/components/ui/spinner";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useConfirm } from "@/components/confirm-dialog";
+import { EmptyState } from "@/components/empty-state";
 import { PageHeading } from "@/components/dashboard/page-heading";
+import { RescheduleSheet } from "@/components/reschedule-sheet";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 import { errorMessage, useToast } from "@/lib/ui/toast";
 
 /**
  * Customer dashboard — lists this user's bookings across all tenants, and
  * lets them cancel or reschedule. Each booking carries its tenant slug + TZ
- * so we can talk to the public availability endpoint scoped to that tenant.
+ * so the reschedule sheet can talk to the public availability endpoint
+ * scoped to that tenant.
  */
 export default function CustomerBookingsPage() {
   const toast = useToast();
+  const confirm = useConfirm();
   const qc = useQueryClient();
   const [rescheduling, setRescheduling] = useState<CustomerBooking | null>(null);
 
@@ -50,6 +48,17 @@ export default function CustomerBookingsPage() {
     },
   });
 
+  async function onCancel(booking: CustomerBooking) {
+    const ok = await confirm({
+      title: "Cancel this booking?",
+      description: `${booking.service.name} at ${booking.tenant.name}.`,
+      confirmText: "Yes, cancel",
+      cancelText: "Keep it",
+      tone: "destructive",
+    });
+    if (ok) cancel.mutate(booking.id);
+  }
+
   const now = DateTime.utc();
   const items = bookings.data ?? [];
   const upcoming = items
@@ -72,22 +81,31 @@ export default function CustomerBookingsPage() {
         description="Manage appointments you've booked across all venues."
       />
 
-      {bookings.isLoading && <Spinner />}
+      {bookings.isLoading && (
+        <div className="space-y-3">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <Skeleton key={i} className="h-24 rounded-2xl" />
+          ))}
+        </div>
+      )}
+
       {bookings.isError && (
-        <p className="text-sm text-red-700">
+        <p className="text-sm text-destructive">
           Could not load bookings: {errorMessage(bookings.error)}
         </p>
       )}
 
       {bookings.data && items.length === 0 && (
-        <div className="rounded-lg border border-dashed border-slate-300 bg-white p-12 text-center text-slate-500">
-          You don&apos;t have any bookings yet.
-        </div>
+        <EmptyState
+          icon={Calendar}
+          title="No bookings yet"
+          description="Once you book an appointment, it'll show up here so you can manage it."
+        />
       )}
 
       {upcoming.length > 0 && (
         <section className="space-y-3">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             Upcoming
           </h2>
           <div className="space-y-3">
@@ -95,11 +113,7 @@ export default function CustomerBookingsPage() {
               <BookingCard
                 key={b.id}
                 booking={b}
-                onCancel={() => {
-                  if (window.confirm("Cancel this booking?")) {
-                    cancel.mutate(b.id);
-                  }
-                }}
+                onCancel={() => onCancel(b)}
                 onReschedule={() => setRescheduling(b)}
               />
             ))}
@@ -109,7 +123,7 @@ export default function CustomerBookingsPage() {
 
       {past.length > 0 && (
         <section className="space-y-3">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             Past & cancelled
           </h2>
           <div className="space-y-3">
@@ -121,21 +135,32 @@ export default function CustomerBookingsPage() {
       )}
 
       {rescheduling && (
-        <RescheduleDialog
-          booking={rescheduling}
-          onClose={() => setRescheduling(null)}
+        <RescheduleSheet
+          open={true}
+          onOpenChange={(next) => !next && setRescheduling(null)}
+          context={{
+            serviceName: rescheduling.service.name,
+            staffName: rescheduling.staffMember.displayName,
+            tenantName: rescheduling.tenant.name,
+          }}
+          bookingId={rescheduling.id}
+          tenantSlug={rescheduling.tenant.slug}
+          tenantTimezone={rescheduling.tenant.timezone}
+          serviceId={rescheduling.service.id}
+          staffMemberId={rescheduling.staffMemberId}
+          onSubmit={(newStartAt) =>
+            customerApi.reschedule(rescheduling.id, newStartAt)
+          }
           onSuccess={() => {
-            setRescheduling(null);
             toast.success("Booking rescheduled.");
             void qc.invalidateQueries({ queryKey: ["customer-bookings"] });
+            setRescheduling(null);
           }}
         />
       )}
     </>
   );
 }
-
-// ---------------------------------------------------------------------------
 
 function BookingCard({
   booking,
@@ -153,215 +178,40 @@ function BookingCard({
     booking.status === "pending" || booking.status === "confirmed";
 
   return (
-    <div className="rounded-lg border bg-white p-4 flex flex-col sm:flex-row sm:items-center gap-4">
+    <div className="rounded-2xl border border-border bg-card p-4 flex flex-col sm:flex-row sm:items-center gap-4 shadow-sm transition hover:border-primary/30">
       <div className="flex-1 min-w-0 space-y-1">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-semibold text-slate-900">{booking.service.name}</span>
+          <span className="font-semibold text-foreground">{booking.service.name}</span>
           <StatusBadge status={booking.status} />
         </div>
-        <p className="text-sm text-slate-600">
-          {start.setLocale("en-US").toFormat("ccc, LLL d, yyyy · HH:mm")}
-          {"–"}
+        <p className="text-sm text-muted-foreground tabular-nums">
+          {start.setLocale("en-US").toFormat("ccc, LLL d, yyyy · HH:mm")}–
           {end.toFormat("HH:mm")}{" "}
-          <span className="text-slate-400">({tz})</span>
+          <span className="text-muted-foreground/70">({tz})</span>
         </p>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-muted-foreground">
           {booking.tenant.name} · with {booking.staffMember.displayName}
         </p>
       </div>
       {(onCancel || onReschedule) && isModifiable && (
-        <div className="flex gap-3 sm:flex-shrink-0">
+        <div className="flex gap-1 sm:flex-shrink-0">
           {onReschedule && (
-            <button
-              type="button"
-              onClick={onReschedule}
-              className="text-sm text-blue-600 hover:underline"
-            >
+            <Button variant="ghost" size="sm" onClick={onReschedule}>
               Reschedule
-            </button>
+            </Button>
           )}
           {onCancel && (
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-destructive hover:bg-destructive/10"
               onClick={onCancel}
-              className="text-sm text-red-700 hover:underline"
             >
               Cancel
-            </button>
+            </Button>
           )}
         </div>
       )}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Reschedule dialog: tenant-scoped availability picker, then POSTs to the
-// customer reschedule endpoint. The backend re-runs the slot check inside
-// SERIALIZABLE + the exclusion constraint, so a stale slot raises 409 here.
-// ---------------------------------------------------------------------------
-
-function RescheduleDialog({
-  booking,
-  onClose,
-  onSuccess,
-}: {
-  booking: CustomerBooking;
-  onClose: () => void;
-  onSuccess: () => void;
-}) {
-  const toast = useToast();
-  const tz = booking.tenant.timezone;
-  const [date, setDate] = useState<string>(() => todayInZone(tz));
-  const [pickedSlot, setPickedSlot] = useState<PublicAvailabilitySlot | null>(
-    null,
-  );
-
-  const availability = useQuery({
-    queryKey: [
-      "customer-reschedule-availability",
-      booking.tenant.slug,
-      booking.service.id,
-      booking.staffMemberId,
-      date,
-    ],
-    queryFn: () =>
-      publicApi.getAvailability(booking.tenant.slug, {
-        serviceId: booking.service.id,
-        staffId: booking.staffMemberId,
-        date,
-      }),
-  });
-
-  const reschedule = useMutation({
-    mutationFn: (newStartAt: string) =>
-      customerApi.reschedule(booking.id, newStartAt),
-    onSuccess,
-    onError: (e) => {
-      if (e instanceof ApiError && e.code === "SLOT_UNAVAILABLE") {
-        toast.error("That slot is no longer available.");
-        void availability.refetch();
-        setPickedSlot(null);
-      } else if (e instanceof ApiError && e.code === "SLOT_TAKEN") {
-        toast.error("That slot was just taken — please pick another.");
-        void availability.refetch();
-        setPickedSlot(null);
-      } else if (
-        e instanceof ApiError &&
-        e.code === "RESCHEDULE_NOT_ALLOWED"
-      ) {
-        toast.error("This booking can no longer be rescheduled online.");
-      } else {
-        toast.error(errorMessage(e));
-      }
-    },
-  });
-
-  const today = todayInZone(tz);
-  const maxDate = dateInZonePlusDays(tz, 60);
-
-  return (
-    <div
-      className="fixed inset-0 z-50 bg-slate-900/50 grid place-items-center p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Reschedule booking"
-    >
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6 space-y-4">
-          <div className="flex justify-between items-start gap-4">
-            <div>
-              <h2 className="text-lg font-semibold text-slate-900">
-                Reschedule booking
-              </h2>
-              <p className="text-sm text-slate-600 mt-1">
-                {booking.service.name} with {booking.staffMember.displayName} at{" "}
-                {booking.tenant.name}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={onClose}
-              className="text-slate-500 hover:text-slate-700 text-2xl leading-none"
-              aria-label="Close"
-            >
-              ×
-            </button>
-          </div>
-
-          <div>
-            <Label htmlFor="reschedule-date">New date</Label>
-            <Input
-              id="reschedule-date"
-              type="date"
-              value={date}
-              min={today}
-              max={maxDate}
-              onChange={(e) => {
-                setDate(e.target.value);
-                setPickedSlot(null);
-              }}
-            />
-            <p className="text-xs text-slate-500 mt-1">
-              Times shown in {tz}.
-            </p>
-          </div>
-
-          {availability.isLoading && <Spinner label="Loading times…" />}
-          {availability.isError && (
-            <p className="text-sm text-red-700">
-              Could not load times: {errorMessage(availability.error)}
-            </p>
-          )}
-          {availability.data && availability.data.slots.length === 0 && (
-            <div className="rounded-md border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-500">
-              No openings on this date. Try another.
-            </div>
-          )}
-
-          {availability.data && availability.data.slots.length > 0 && (
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
-              {availability.data.slots.map((s) => {
-                const isSel = pickedSlot?.startUtc === s.startUtc;
-                return (
-                  <button
-                    key={s.startUtc}
-                    type="button"
-                    onClick={() => setPickedSlot(s)}
-                    className={`rounded-md border px-3 py-2 text-sm font-medium transition ${
-                      isSel
-                        ? "border-blue-600 bg-blue-50 text-blue-900"
-                        : "border-slate-200 bg-white hover:border-slate-400"
-                    }`}
-                  >
-                    {s.displayTime}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          <div className="flex justify-end gap-3 pt-2 border-t">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={onClose}
-              disabled={reschedule.isPending}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              disabled={!pickedSlot || reschedule.isPending}
-              onClick={() => {
-                if (pickedSlot) reschedule.mutate(pickedSlot.startUtc);
-              }}
-            >
-              {reschedule.isPending ? "Rescheduling…" : "Confirm new time"}
-            </Button>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

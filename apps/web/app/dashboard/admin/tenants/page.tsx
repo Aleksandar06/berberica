@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { Building2, ChevronRight, Plus, Search } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -8,8 +9,16 @@ import { adminApi, type TenantStatus } from "@/lib/api/admin";
 import { ApiError } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/empty-state";
 import { PageHeading } from "@/components/dashboard/page-heading";
-import { Spinner } from "@/components/ui/spinner";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 
 export default function AdminTenantsList() {
@@ -34,14 +43,15 @@ export default function AdminTenantsList() {
         title="Tenants"
         description="Every business on the platform."
         actions={
-          <Link href="/dashboard/admin/tenants/new" className="btn-primary">
-            New tenant
-          </Link>
+          <Button asChild leadingIcon={<Plus />}>
+            <Link href="/dashboard/admin/tenants/new">New tenant</Link>
+          </Button>
         }
       />
 
-      <div className="flex flex-wrap gap-3 items-end">
-        <div className="flex-1 min-w-[200px]">
+      <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
+        <div className="flex-1 relative">
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search name or slug…"
             value={search}
@@ -49,88 +59,127 @@ export default function AdminTenantsList() {
               setSearch(e.target.value);
               setPage(1);
             }}
+            className="pl-10"
           />
         </div>
-        <select
-          value={status}
-          onChange={(e) => {
-            setStatus(e.target.value as TenantStatus | "");
+        <Select
+          value={status || "__all"}
+          onValueChange={(v) => {
+            setStatus(v === "__all" ? "" : (v as TenantStatus));
             setPage(1);
           }}
-          className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
         >
-          <option value="">All statuses</option>
-          <option value="active">Active</option>
-          <option value="suspended">Suspended</option>
-        </select>
+          <SelectTrigger className="sm:w-48">
+            <SelectValue placeholder="All statuses" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all">All statuses</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="suspended">Suspended</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
-      <div className="rounded-lg border bg-white overflow-hidden">
-        {isLoading && (
-          <div className="p-6">
-            <Spinner />
-          </div>
-        )}
-        {error instanceof ApiError && (
-          <div className="p-6 text-sm text-red-700">
-            Couldn&apos;t load tenants: {error.message}
-          </div>
-        )}
-        {data && (
+      {isLoading && <TenantsSkeleton />}
+      {error instanceof ApiError && (
+        <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+          Couldn&apos;t load tenants: {error.message}
+        </div>
+      )}
+
+      {data && data.items.length === 0 && (
+        <EmptyState
+          icon={Building2}
+          title="No tenants match"
+          description="Try adjusting your search or status filter."
+        />
+      )}
+
+      {/* MOBILE: card list */}
+      {data && data.items.length > 0 && (
+        <ul className="space-y-2 md:hidden">
+          {data.items.map((t) => (
+            <li key={t.id}>
+              <Link
+                href={`/dashboard/admin/tenants/${t.id}`}
+                className="block rounded-2xl border border-border bg-card p-4 hover:border-primary/40 hover:bg-accent transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-base font-semibold text-foreground truncate">
+                        {t.name}
+                      </p>
+                      <StatusBadge status={t.status} />
+                    </div>
+                    <p className="text-xs font-mono text-muted-foreground truncate">
+                      {t.slug}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {t.businessType} · {t.timezone}
+                    </p>
+                  </div>
+                  <ChevronRight
+                    className="h-5 w-5 text-muted-foreground shrink-0 mt-1"
+                    aria-hidden
+                  />
+                </div>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {/* DESKTOP: table */}
+      {data && data.items.length > 0 && (
+        <div className="hidden md:block rounded-2xl border border-border bg-card overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 border-b">
+            <thead className="bg-muted/50 border-b border-border">
               <tr>
-                <th className="text-left p-3 font-medium text-slate-700">Name</th>
-                <th className="text-left p-3 font-medium text-slate-700">Slug</th>
-                <th className="text-left p-3 font-medium text-slate-700">Type</th>
-                <th className="text-left p-3 font-medium text-slate-700">Timezone</th>
-                <th className="text-left p-3 font-medium text-slate-700">Status</th>
-                <th className="text-right p-3 font-medium text-slate-700">Open</th>
+                <th className="text-left p-3 font-medium text-foreground">Name</th>
+                <th className="text-left p-3 font-medium text-foreground">Slug</th>
+                <th className="text-left p-3 font-medium text-foreground">Type</th>
+                <th className="text-left p-3 font-medium text-foreground">Timezone</th>
+                <th className="text-left p-3 font-medium text-foreground">Status</th>
+                <th className="text-right p-3 font-medium text-foreground">Open</th>
               </tr>
             </thead>
             <tbody>
-              {data.items.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="p-8 text-center text-slate-500">
-                    No tenants match.
+              {data.items.map((t) => (
+                <tr key={t.id} className="border-b border-border last:border-0">
+                  <td className="p-3 font-medium text-foreground">{t.name}</td>
+                  <td className="p-3 font-mono text-xs text-muted-foreground">
+                    {t.slug}
+                  </td>
+                  <td className="p-3 text-muted-foreground">{t.businessType}</td>
+                  <td className="p-3 text-muted-foreground">{t.timezone}</td>
+                  <td className="p-3">
+                    <StatusBadge status={t.status} />
+                  </td>
+                  <td className="p-3 text-right">
+                    <Link
+                      href={`/dashboard/admin/tenants/${t.id}`}
+                      className="text-primary font-medium hover:underline"
+                    >
+                      Open →
+                    </Link>
                   </td>
                 </tr>
-              ) : (
-                data.items.map((t) => (
-                  <tr key={t.id} className="border-b last:border-0">
-                    <td className="p-3 font-medium text-slate-900">{t.name}</td>
-                    <td className="p-3 font-mono text-xs text-slate-700">
-                      {t.slug}
-                    </td>
-                    <td className="p-3 text-slate-600">{t.businessType}</td>
-                    <td className="p-3 text-slate-600">{t.timezone}</td>
-                    <td className="p-3">
-                      <StatusBadge status={t.status} />
-                    </td>
-                    <td className="p-3 text-right">
-                      <Link
-                        href={`/dashboard/admin/tenants/${t.id}`}
-                        className="text-blue-600 hover:underline"
-                      >
-                        Open →
-                      </Link>
-                    </td>
-                  </tr>
-                ))
-              )}
+              ))}
             </tbody>
           </table>
-        )}
-      </div>
+        </div>
+      )}
 
       {data && data.pagination.totalPages > 1 && (
         <div className="flex items-center justify-between text-sm">
-          <span className="text-slate-600">
+          <span className="text-muted-foreground">
             Page {data.pagination.page} of {data.pagination.totalPages}
           </span>
           <div className="flex gap-2">
             <Button
               variant="secondary"
+              size="sm"
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1}
             >
@@ -138,6 +187,7 @@ export default function AdminTenantsList() {
             </Button>
             <Button
               variant="secondary"
+              size="sm"
               onClick={() => setPage((p) => p + 1)}
               disabled={page >= data.pagination.totalPages}
             >
@@ -147,5 +197,18 @@ export default function AdminTenantsList() {
         </div>
       )}
     </>
+  );
+}
+
+function TenantsSkeleton() {
+  return (
+    <div className="space-y-2 md:rounded-2xl md:border md:border-border md:bg-card md:overflow-hidden md:space-y-0">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <Skeleton
+          key={i}
+          className="h-24 rounded-2xl md:rounded-none md:h-12 md:border-b md:last:border-0"
+        />
+      ))}
+    </div>
   );
 }

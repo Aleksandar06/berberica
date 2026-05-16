@@ -3,35 +3,120 @@
 @tailwind utilities;
 
 /* ---------------------------------------------------------------------------
- * Brand variables — set per-tenant by app/[tenantSlug]/layout.tsx via inline
- * style on the wrapping div. Default values here cover the platform pages.
+ * Treatwell-inspired design tokens.
+ *
+ * Naming follows the shadcn/ui convention so primitive components stay
+ * portable. Tenant storefronts override `--primary` (and related) at the
+ * `[tenantSlug]/layout.tsx` level via inline style on a wrapping div, so a
+ * tenant's brand color flows through every Button, focus ring, badge, etc.
+ * automatically — without rebuilding Tailwind per tenant.
+ *
+ * Color space: HSL components (no `hsl(` wrapper) so Tailwind can compose
+ * them with alpha modifiers (`bg-primary/10` etc.).
+ * ------------------------------------------------------------------------- */
+
+@layer base {
+  :root {
+    /* Surfaces */
+    --background: 0 0% 100%;
+    --foreground: 240 10% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 12%;
+
+    /* Brand — vivid pink/magenta, Treatwell territory */
+    --primary: 340 82% 56%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 240 10% 12%;
+
+    /* Subdued surfaces and text */
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 4% 46%;
+    --accent: 340 80% 96%;
+    --accent-foreground: 340 75% 30%;
+
+    /* Status */
+    --destructive: 0 80% 56%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 152 60% 40%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 30 30% 18%;
+
+    /* Hairlines and focus */
+    --border: 240 6% 90%;
+    --input: 240 6% 88%;
+    --ring: 340 82% 56%;
+
+    /* Shape language — Treatwell uses generous radii */
+    --radius: 0.875rem;
+
+    /* Fonts (set by next/font/google in app/layout.tsx) */
+    --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+    --font-mono: ui-monospace, "SFMono-Regular", "Menlo", monospace;
+  }
+
+  /* Reset + base */
+  * {
+    @apply border-border;
+  }
+  html {
+    -webkit-tap-highlight-color: transparent;
+    text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1;
+  }
+  /* Tabular numerals where alignment matters (tables, stats, timers) */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+  /* iOS bottom safe-area helpers — used by sticky CTAs and bottom nav */
+  .pb-safe {
+    padding-bottom: max(env(safe-area-inset-bottom), 0px);
+  }
+  .pt-safe {
+    padding-top: max(env(safe-area-inset-top), 0px);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Legacy brand variables + shim classes.
+ *
+ * Pre-Phase-1 pages used hand-rolled `.btn-primary`, `.btn-secondary`,
+ * `.brand-bg`, `.brand-ring`, `.brand-accent` utilities driven by
+ * `--brand-primary` etc. (hex values, set per-tenant in
+ * `app/[tenantSlug]/layout.tsx` via inline style). The shims below
+ * preserve that contract so the tenant storefront keeps its bespoke
+ * colors until Phase 6 wires tenant branding into `--primary` HSL too.
+ *
+ * The defaults here apply on platform pages (dashboards, landing, auth)
+ * where there's no tenant. On tenant pages, the inline-style overrides
+ * take precedence.
  * ------------------------------------------------------------------------- */
 :root {
-  --brand-primary: #0f172a;
+  --brand-primary: #1f2937;
   --brand-secondary: #3b82f6;
   --brand-accent: #f59e0b;
   --brand-on-primary: #ffffff;
 }
 
-/* Reusable component classes that read from the brand variables. Components
- * use these (or arbitrary Tailwind values via var(...)) so each tenant looks
- * distinct without per-tenant Tailwind builds. */
 @layer components {
   .btn-primary {
-    @apply inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center rounded-full px-5 py-2.5 text-sm font-medium shadow-sm transition hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed;
     background-color: var(--brand-primary);
     color: var(--brand-on-primary);
   }
-  .btn-primary:hover:not(:disabled) {
-    filter: brightness(1.1);
-  }
   .btn-secondary {
-    @apply inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium border transition;
+    @apply inline-flex items-center justify-center rounded-full px-5 py-2.5 text-sm font-medium border transition disabled:opacity-50;
     border-color: var(--brand-primary);
     color: var(--brand-primary);
     background-color: transparent;
   }
-  .btn-secondary:hover {
+  .btn-secondary:hover:not(:disabled) {
     background-color: color-mix(in srgb, var(--brand-primary) 8%, transparent);
   }
   .brand-accent {

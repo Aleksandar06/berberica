@@ -1,15 +1,42 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect } from "react";
+import { useForm, type SubmitHandler } from "react-hook-form";
+import { z } from "zod";
 
 import { businessApi } from "@/lib/api/business";
 import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import { StickySaveBar } from "@/components/sticky-save-bar";
 import { PageHeading } from "@/components/dashboard/page-heading";
-import { Spinner } from "@/components/ui/spinner";
 import { errorMessage, useToast } from "@/lib/ui/toast";
+import { cn } from "@/lib/utils";
 
 export default function BusinessSettingsPage() {
   return (
@@ -18,37 +45,79 @@ export default function BusinessSettingsPage() {
         title="Settings"
         description="Business profile, booking policy, and brand colors."
       />
-      <div className="space-y-8">
-        <ProfileCard />
-        <SettingsCard />
-        <BrandingCard />
-      </div>
+
+      <Tabs defaultValue="profile" className="space-y-6">
+        <TabsList className="w-full sm:w-auto">
+          <TabsTrigger value="profile" className="flex-1 sm:flex-initial">
+            Profile
+          </TabsTrigger>
+          <TabsTrigger value="policy" className="flex-1 sm:flex-initial">
+            Booking policy
+          </TabsTrigger>
+          <TabsTrigger value="branding" className="flex-1 sm:flex-initial">
+            Branding
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="profile">
+          <ProfileTab />
+        </TabsContent>
+        <TabsContent value="policy">
+          <PolicyTab />
+        </TabsContent>
+        <TabsContent value="branding">
+          <BrandingTab />
+        </TabsContent>
+      </Tabs>
     </>
   );
 }
 
-// ---------------------------------------------------------------------------
+// ===========================================================================
 // PROFILE
-// ---------------------------------------------------------------------------
+// ===========================================================================
 
-function ProfileCard() {
+const profileSchema = z.object({
+  name: z.string().min(1, "Required").max(120),
+  businessType: z.string().min(1, "Required").max(60),
+  timezone: z.string().min(1, "IANA timezone required").max(60),
+  contactEmail: z
+    .string()
+    .email("Invalid email")
+    .max(255)
+    .or(z.literal(""))
+    .nullable()
+    .optional(),
+  contactPhone: z.string().max(40).or(z.literal("")).nullable().optional(),
+  address: z.string().max(255).or(z.literal("")).nullable().optional(),
+});
+type ProfileForm = z.infer<typeof profileSchema>;
+
+function ProfileTab() {
   const toast = useToast();
   const qc = useQueryClient();
   const q = useQuery({
     queryKey: ["business-profile"],
     queryFn: () => businessApi.profile.get(),
   });
-  const [form, setForm] = useState({
-    name: "",
-    businessType: "",
-    timezone: "",
-    contactEmail: "",
-    contactPhone: "",
-    address: "",
+
+  const form = useForm<ProfileForm>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      name: "",
+      businessType: "",
+      timezone: "",
+      contactEmail: "",
+      contactPhone: "",
+      address: "",
+    },
   });
+
+  // Re-sync when the server payload lands. Reset keeps the form's
+  // baseline correct so `isDirty` accurately reflects user edits.
   useEffect(() => {
     if (q.data) {
-      setForm({
+      form.reset({
         name: q.data.name,
         businessType: q.data.businessType,
         timezone: q.data.timezone,
@@ -57,16 +126,17 @@ function ProfileCard() {
         address: q.data.address ?? "",
       });
     }
-  }, [q.data]);
+  }, [q.data, form]);
+
   const update = useMutation({
-    mutationFn: () =>
+    mutationFn: (values: ProfileForm) =>
       businessApi.profile.update({
-        name: form.name,
-        businessType: form.businessType,
-        timezone: form.timezone,
-        contactEmail: form.contactEmail || null,
-        contactPhone: form.contactPhone || null,
-        address: form.address || null,
+        name: values.name,
+        businessType: values.businessType,
+        timezone: values.timezone,
+        contactEmail: values.contactEmail || null,
+        contactPhone: values.contactPhone || null,
+        address: values.address || null,
       }),
     onSuccess: () => {
       toast.success("Profile updated.");
@@ -75,234 +145,413 @@ function ProfileCard() {
     onError: (e) => toast.error(errorMessage(e)),
   });
 
-  if (q.isLoading) return <Spinner />;
+  const onSubmit: SubmitHandler<ProfileForm> = (values) => update.mutate(values);
+
+  if (q.isLoading) return <SettingsSkeleton />;
+
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        update.mutate();
-      }}
-      className="rounded-lg border bg-white p-6 space-y-4"
+    <SettingsCard
+      title="Business profile"
+      description="What customers see on your storefront."
     >
-      <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wider">
-        Profile
-      </h2>
-      <Field
-        id="name"
-        label="Name"
-        value={form.name}
-        onChange={(v) => setForm({ ...form, name: v })}
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Business name</FormLabel>
+                <FormControl>
+                  <Input {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <div className="grid sm:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="businessType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Business type</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="e.g. barbershop, dental_clinic"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="timezone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Timezone (IANA)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Europe/Skopje" {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    All times are shown to customers in this zone.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <FormField
+            control={form.control}
+            name="contactEmail"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Contact email</FormLabel>
+                <FormControl>
+                  <Input
+                    type="email"
+                    value={field.value ?? ""}
+                    onChange={field.onChange}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="contactPhone"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Contact phone</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="+38970555000"
+                    value={field.value ?? ""}
+                    onChange={field.onChange}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="address"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Address</FormLabel>
+                <FormControl>
+                  <Input
+                    value={field.value ?? ""}
+                    onChange={field.onChange}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </form>
+      </Form>
+
+      <StickySaveBar
+        visible={form.formState.isDirty}
+        saving={update.isPending}
+        onSave={() => form.handleSubmit(onSubmit)()}
+        onDiscard={() => form.reset()}
       />
-      <Field
-        id="businessType"
-        label="Business type"
-        value={form.businessType}
-        onChange={(v) => setForm({ ...form, businessType: v })}
-      />
-      <Field
-        id="timezone"
-        label="Timezone (IANA)"
-        value={form.timezone}
-        onChange={(v) => setForm({ ...form, timezone: v })}
-      />
-      <Field
-        id="contactEmail"
-        label="Contact email"
-        type="email"
-        value={form.contactEmail}
-        onChange={(v) => setForm({ ...form, contactEmail: v })}
-      />
-      <Field
-        id="contactPhone"
-        label="Contact phone (E.164)"
-        value={form.contactPhone}
-        onChange={(v) => setForm({ ...form, contactPhone: v })}
-      />
-      <Field
-        id="address"
-        label="Address"
-        value={form.address}
-        onChange={(v) => setForm({ ...form, address: v })}
-      />
-      <div className="flex justify-end">
-        <Button type="submit" disabled={update.isPending}>
-          {update.isPending ? "Saving…" : "Save profile"}
-        </Button>
-      </div>
-    </form>
+    </SettingsCard>
   );
 }
 
-// ---------------------------------------------------------------------------
-// SETTINGS
-// ---------------------------------------------------------------------------
+// ===========================================================================
+// BOOKING POLICY
+// ===========================================================================
 
 const SLOT_OPTIONS = [5, 10, 15, 20, 30, 45, 60, 90, 120];
 
-function SettingsCard() {
+const policySchema = z.object({
+  defaultSlotDurationMinutes: z.number().int().min(1).max(720),
+  bookingLeadTimeMinutes: z.number().int().min(0).max(43200),
+  bookingMaxDaysAhead: z.number().int().min(0).max(365),
+  allowGuestBooking: z.boolean(),
+  allowCustomerCancellation: z.boolean(),
+  cancellationCutoffMinutes: z.number().int().min(0).max(43200),
+  allowCustomerReschedule: z.boolean(),
+  rescheduleCutoffMinutes: z.number().int().min(0).max(43200),
+  requireVerifiedAccountForBooking: z.boolean(),
+});
+type PolicyForm = z.infer<typeof policySchema>;
+
+function PolicyTab() {
   const toast = useToast();
   const qc = useQueryClient();
   const q = useQuery({
     queryKey: ["business-settings"],
     queryFn: () => businessApi.settings.get(),
   });
-  const [form, setForm] = useState({
-    defaultSlotDurationMinutes: 15,
-    bookingLeadTimeMinutes: 0,
-    bookingMaxDaysAhead: 60,
-    allowGuestBooking: true,
-    allowCustomerCancellation: true,
-    cancellationCutoffMinutes: 120,
-    allowCustomerReschedule: true,
-    rescheduleCutoffMinutes: 120,
-    requireVerifiedAccountForBooking: false,
+
+  const form = useForm<PolicyForm>({
+    resolver: zodResolver(policySchema),
+    defaultValues: {
+      defaultSlotDurationMinutes: 15,
+      bookingLeadTimeMinutes: 0,
+      bookingMaxDaysAhead: 60,
+      allowGuestBooking: true,
+      allowCustomerCancellation: true,
+      cancellationCutoffMinutes: 120,
+      allowCustomerReschedule: true,
+      rescheduleCutoffMinutes: 120,
+      requireVerifiedAccountForBooking: false,
+    },
   });
+
   useEffect(() => {
-    if (!q.data) return;
-    setForm({
-      defaultSlotDurationMinutes: q.data.defaultSlotDurationMinutes,
-      bookingLeadTimeMinutes: q.data.bookingLeadTimeMinutes,
-      bookingMaxDaysAhead: q.data.bookingMaxDaysAhead,
-      allowGuestBooking: q.data.allowGuestBooking,
-      allowCustomerCancellation: q.data.allowCustomerCancellation,
-      cancellationCutoffMinutes: q.data.cancellationCutoffMinutes,
-      allowCustomerReschedule: q.data.allowCustomerReschedule,
-      rescheduleCutoffMinutes: q.data.rescheduleCutoffMinutes,
-      requireVerifiedAccountForBooking: q.data.requireVerifiedAccountForBooking,
-    });
-  }, [q.data]);
+    if (q.data) form.reset(q.data);
+  }, [q.data, form]);
+
   const update = useMutation({
-    mutationFn: () => businessApi.settings.update(form),
+    mutationFn: (values: PolicyForm) => businessApi.settings.update(values),
     onSuccess: () => {
-      toast.success("Settings updated.");
+      toast.success("Booking policy updated.");
       void qc.invalidateQueries({ queryKey: ["business-settings"] });
     },
     onError: (e) => toast.error(errorMessage(e)),
   });
 
-  if (q.isLoading) return <Spinner />;
+  const onSubmit: SubmitHandler<PolicyForm> = (values) => update.mutate(values);
+
+  if (q.isLoading) return <SettingsSkeleton />;
+
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        update.mutate();
-      }}
-      className="rounded-lg border bg-white p-6 space-y-4"
+    <SettingsCard
+      title="Booking policy"
+      description="How customers can book, cancel, and reschedule."
     >
-      <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wider">
-        Booking policy
-      </h2>
-      <div className="grid sm:grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="slot">Default slot duration</Label>
-          <select
-            id="slot"
-            value={form.defaultSlotDurationMinutes}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                defaultSlotDurationMinutes: Number(e.target.value),
-              })
-            }
-            className="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
-          >
-            {SLOT_OPTIONS.map((n) => (
-              <option key={n} value={n}>
-                {n} min
-              </option>
-            ))}
-          </select>
-        </div>
-        <NumberField
-          id="lead"
-          label="Lead time (min)"
-          value={form.bookingLeadTimeMinutes}
-          onChange={(v) => setForm({ ...form, bookingLeadTimeMinutes: v })}
-        />
-        <NumberField
-          id="max"
-          label="Max days ahead"
-          value={form.bookingMaxDaysAhead}
-          onChange={(v) => setForm({ ...form, bookingMaxDaysAhead: v })}
-        />
-        <NumberField
-          id="cancel-cut"
-          label="Cancellation cutoff (min)"
-          value={form.cancellationCutoffMinutes}
-          onChange={(v) => setForm({ ...form, cancellationCutoffMinutes: v })}
-        />
-        <NumberField
-          id="resched-cut"
-          label="Reschedule cutoff (min)"
-          value={form.rescheduleCutoffMinutes}
-          onChange={(v) => setForm({ ...form, rescheduleCutoffMinutes: v })}
-        />
-      </div>
-      <Checkbox
-        label="Allow guest booking"
-        value={form.allowGuestBooking}
-        onChange={(v) => setForm({ ...form, allowGuestBooking: v })}
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <section className="space-y-4">
+            <SectionLabel>Scheduling</SectionLabel>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="defaultSlotDurationMinutes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Default slot duration</FormLabel>
+                    <Select
+                      value={String(field.value)}
+                      onValueChange={(v) => field.onChange(Number(v))}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {SLOT_OPTIONS.map((n) => (
+                          <SelectItem key={n} value={String(n)}>
+                            {n} min
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="bookingLeadTimeMinutes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Lead time (min)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={0}
+                        value={field.value}
+                        onChange={(e) => field.onChange(Number(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Minimum minutes between now and a bookable slot.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="bookingMaxDaysAhead"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Max days ahead</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={0}
+                        value={field.value}
+                        onChange={(e) => field.onChange(Number(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      How far in the future customers can book.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </section>
+
+          <section className="space-y-4 pt-6 border-t border-border">
+            <SectionLabel>Customer actions</SectionLabel>
+            <div className="space-y-1">
+              <SwitchRow
+                label="Allow guest booking"
+                description="Customers without an account can book using just an email + OTP."
+                form={form}
+                name="allowGuestBooking"
+              />
+              <SwitchRow
+                label="Require a verified account to book"
+                description="Logged-in customers must have verified their email before booking."
+                form={form}
+                name="requireVerifiedAccountForBooking"
+              />
+            </div>
+            <div className="pt-2 space-y-1">
+              <SwitchRow
+                label="Allow customer cancellation"
+                form={form}
+                name="allowCustomerCancellation"
+              />
+              {form.watch("allowCustomerCancellation") && (
+                <FormField
+                  control={form.control}
+                  name="cancellationCutoffMinutes"
+                  render={({ field }) => (
+                    <FormItem className="pl-4 max-w-xs">
+                      <FormLabel>Cancellation cutoff (min)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={0}
+                          value={field.value}
+                          onChange={(e) =>
+                            field.onChange(Number(e.target.value))
+                          }
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        How close to the appointment they can still cancel.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+            </div>
+            <div className="space-y-1">
+              <SwitchRow
+                label="Allow customer reschedule"
+                form={form}
+                name="allowCustomerReschedule"
+              />
+              {form.watch("allowCustomerReschedule") && (
+                <FormField
+                  control={form.control}
+                  name="rescheduleCutoffMinutes"
+                  render={({ field }) => (
+                    <FormItem className="pl-4 max-w-xs">
+                      <FormLabel>Reschedule cutoff (min)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={0}
+                          value={field.value}
+                          onChange={(e) =>
+                            field.onChange(Number(e.target.value))
+                          }
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        How close to the appointment they can still reschedule.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+            </div>
+          </section>
+        </form>
+      </Form>
+
+      <StickySaveBar
+        visible={form.formState.isDirty}
+        saving={update.isPending}
+        onSave={() => form.handleSubmit(onSubmit)()}
+        onDiscard={() => form.reset()}
       />
-      <Checkbox
-        label="Allow customer cancellation"
-        value={form.allowCustomerCancellation}
-        onChange={(v) => setForm({ ...form, allowCustomerCancellation: v })}
-      />
-      <Checkbox
-        label="Allow customer reschedule"
-        value={form.allowCustomerReschedule}
-        onChange={(v) => setForm({ ...form, allowCustomerReschedule: v })}
-      />
-      <Checkbox
-        label="Require verified account for booking"
-        value={form.requireVerifiedAccountForBooking}
-        onChange={(v) =>
-          setForm({ ...form, requireVerifiedAccountForBooking: v })
-        }
-      />
-      <div className="flex justify-end">
-        <Button type="submit" disabled={update.isPending}>
-          {update.isPending ? "Saving…" : "Save settings"}
-        </Button>
-      </div>
-    </form>
+    </SettingsCard>
   );
 }
 
-// ---------------------------------------------------------------------------
+// ===========================================================================
 // BRANDING
-// ---------------------------------------------------------------------------
+// ===========================================================================
 
-function BrandingCard() {
+const colorHex = z
+  .string()
+  .regex(/^#[0-9a-fA-F]{6}$/i, "Hex color like #112233 required");
+const brandingSchema = z.object({
+  logoUrl: z.string().url("Must be a URL").or(z.literal("")),
+  primaryColor: colorHex,
+  secondaryColor: colorHex,
+  accentColor: colorHex,
+});
+type BrandingForm = z.infer<typeof brandingSchema>;
+
+function BrandingTab() {
   const toast = useToast();
   const qc = useQueryClient();
   const q = useQuery({
     queryKey: ["business-branding"],
     queryFn: () => businessApi.branding.get(),
   });
-  const [form, setForm] = useState({
-    logoUrl: "",
-    primaryColor: "#0f172a",
-    secondaryColor: "#3b82f6",
-    accentColor: "#f59e0b",
+
+  const form = useForm<BrandingForm>({
+    resolver: zodResolver(brandingSchema),
+    defaultValues: {
+      logoUrl: "",
+      primaryColor: "#1f2937",
+      secondaryColor: "#3b82f6",
+      accentColor: "#f59e0b",
+    },
   });
+
   useEffect(() => {
     if (q.data) {
-      setForm({
+      form.reset({
         logoUrl: q.data.logoUrl ?? "",
-        primaryColor: q.data.primaryColor ?? "#0f172a",
+        primaryColor: q.data.primaryColor ?? "#1f2937",
         secondaryColor: q.data.secondaryColor ?? "#3b82f6",
         accentColor: q.data.accentColor ?? "#f59e0b",
       });
     }
-  }, [q.data]);
+  }, [q.data, form]);
+
   const update = useMutation({
-    mutationFn: () =>
+    mutationFn: (values: BrandingForm) =>
       businessApi.branding.update({
-        logoUrl: form.logoUrl || null,
-        primaryColor: form.primaryColor || null,
-        secondaryColor: form.secondaryColor || null,
-        accentColor: form.accentColor || null,
+        logoUrl: values.logoUrl || null,
+        primaryColor: values.primaryColor || null,
+        secondaryColor: values.secondaryColor || null,
+        accentColor: values.accentColor || null,
       }),
     onSuccess: () => {
       toast.success("Branding updated.");
@@ -311,172 +560,284 @@ function BrandingCard() {
     onError: (e) => toast.error(errorMessage(e)),
   });
 
-  if (q.isLoading) return <Spinner />;
+  const onSubmit: SubmitHandler<BrandingForm> = (values) =>
+    update.mutate(values);
+
+  // Live preview pulls from `watch()` so the storefront header mock
+  // updates as the user drags the color picker.
+  const live = form.watch();
+  const profileQ = useQuery({
+    queryKey: ["business-profile"],
+    queryFn: () => businessApi.profile.get(),
+  });
+
+  if (q.isLoading) return <SettingsSkeleton />;
+
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        update.mutate();
-      }}
-      className="rounded-lg border bg-white p-6 space-y-4"
+    <SettingsCard
+      title="Branding"
+      description="Customise how your storefront looks to customers."
     >
-      <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wider">
-        Branding
-      </h2>
-      <Field
-        id="logoUrl"
-        label="Logo URL"
-        description="Direct file upload lands in the storage step. For now, paste any image URL."
-        value={form.logoUrl}
-        onChange={(v) => setForm({ ...form, logoUrl: v })}
-      />
-      <div className="grid sm:grid-cols-3 gap-4">
-        <ColorField
-          id="primary"
-          label="Primary"
-          value={form.primaryColor}
-          onChange={(v) => setForm({ ...form, primaryColor: v })}
-        />
-        <ColorField
-          id="secondary"
-          label="Secondary"
-          value={form.secondaryColor}
-          onChange={(v) => setForm({ ...form, secondaryColor: v })}
-        />
-        <ColorField
-          id="accent"
-          label="Accent"
-          value={form.accentColor}
-          onChange={(v) => setForm({ ...form, accentColor: v })}
+      <div className="grid lg:grid-cols-[1fr_320px] gap-6">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="logoUrl"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Logo URL</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="https://…"
+                      value={field.value ?? ""}
+                      onChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Direct file upload lands in a future release. For now,
+                    paste a public image URL.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="grid sm:grid-cols-3 gap-4">
+              <ColorField form={form} name="primaryColor" label="Primary" />
+              <ColorField form={form} name="secondaryColor" label="Secondary" />
+              <ColorField form={form} name="accentColor" label="Accent" />
+            </div>
+          </form>
+        </Form>
+
+        <BrandPreview
+          name={profileQ.data?.name ?? "Your business"}
+          primaryColor={live.primaryColor}
+          accentColor={live.accentColor}
+          logoUrl={live.logoUrl || null}
         />
       </div>
-      <div className="rounded-md border bg-slate-50 p-4">
-        <p className="text-xs text-slate-500 mb-2">Preview</p>
+
+      <StickySaveBar
+        visible={form.formState.isDirty}
+        saving={update.isPending}
+        onSave={() => form.handleSubmit(onSubmit)()}
+        onDiscard={() => form.reset()}
+      />
+    </SettingsCard>
+  );
+}
+
+function BrandPreview({
+  name,
+  primaryColor,
+  accentColor,
+  logoUrl,
+}: {
+  name: string;
+  primaryColor: string;
+  accentColor: string;
+  logoUrl: string | null;
+}) {
+  const initial = name.slice(0, 1).toUpperCase();
+  return (
+    <aside className="space-y-3">
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        Storefront preview
+      </p>
+      <div className="rounded-2xl overflow-hidden border border-border shadow-sm bg-card">
+        {/* Faux browser chrome to make it feel like a window */}
+        <div className="flex items-center gap-1.5 px-3 py-2 bg-muted/60 border-b border-border">
+          <span className="h-2.5 w-2.5 rounded-full bg-destructive/60" />
+          <span className="h-2.5 w-2.5 rounded-full bg-warning/70" />
+          <span className="h-2.5 w-2.5 rounded-full bg-success/70" />
+        </div>
+        {/* Branded header */}
         <div
-          className="rounded-md p-4 text-white"
-          style={{ background: form.primaryColor }}
+          className="px-4 py-3.5 flex items-center justify-between gap-3"
+          style={{ backgroundColor: primaryColor, color: "#fff" }}
         >
-          Your storefront header looks like this.
+          <div className="flex items-center gap-2 min-w-0">
+            {logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={logoUrl}
+                alt=""
+                className="h-7 w-7 rounded bg-white object-contain p-0.5"
+              />
+            ) : (
+              <span className="h-7 w-7 rounded bg-white/20 grid place-items-center text-xs font-bold">
+                {initial}
+              </span>
+            )}
+            <span className="font-semibold truncate">{name}</span>
+          </div>
+          <span
+            className="text-xs font-medium px-2.5 py-1 rounded-full"
+            style={{ backgroundColor: "rgba(255,255,255,0.18)" }}
+          >
+            Book now
+          </span>
+        </div>
+        {/* Service card */}
+        <div className="p-4 space-y-3">
+          <div className="rounded-xl border border-border p-3">
+            <div className="flex justify-between items-start gap-3">
+              <p className="font-semibold text-foreground text-sm">
+                Classic Haircut
+              </p>
+              <span
+                className="text-xs font-medium px-2 py-0.5 rounded-full"
+                style={{
+                  backgroundColor: `${accentColor}22`,
+                  color: accentColor,
+                }}
+              >
+                30 min
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              30-minute precision cut.
+            </p>
+          </div>
+          <button
+            type="button"
+            disabled
+            className="w-full rounded-full py-2.5 text-sm font-medium text-white"
+            style={{ backgroundColor: primaryColor }}
+          >
+            Book this service
+          </button>
         </div>
       </div>
-      <div className="flex justify-end">
-        <Button type="submit" disabled={update.isPending}>
-          {update.isPending ? "Saving…" : "Save branding"}
-        </Button>
-      </div>
-    </form>
+    </aside>
   );
 }
 
-// ---------------------------------------------------------------------------
+// ===========================================================================
 // PRIMITIVES
-// ---------------------------------------------------------------------------
+// ===========================================================================
 
-function Field({
-  id,
+function SettingsCard({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-5">
+      <div className="space-y-1">
+        <h2 className="text-h2 text-foreground">{title}</h2>
+        {description && (
+          <p className="text-sm text-muted-foreground">{description}</p>
+        )}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+      {children}
+    </h3>
+  );
+}
+
+type BooleanPolicyKey =
+  | "allowGuestBooking"
+  | "allowCustomerCancellation"
+  | "allowCustomerReschedule"
+  | "requireVerifiedAccountForBooking";
+
+function SwitchRow({
   label,
   description,
-  value,
-  onChange,
-  type = "text",
+  form,
+  name,
 }: {
-  id: string;
   label: string;
   description?: string;
-  value: string;
-  onChange: (v: string) => void;
-  type?: string;
+  form: ReturnType<typeof useForm<PolicyForm>>;
+  name: BooleanPolicyKey;
 }) {
   return (
-    <div>
-      <Label htmlFor={id}>{label}</Label>
-      <Input
-        id={id}
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-      />
-      {description && (
-        <p className="text-xs text-slate-500 mt-1">{description}</p>
+    <FormField
+      control={form.control}
+      name={name}
+      render={({ field }) => (
+        <FormItem className="flex flex-row items-start gap-4 justify-between space-y-0 py-2">
+          <div className="space-y-0.5">
+            <FormLabel className="text-sm font-medium text-foreground mb-0 cursor-pointer">
+              {label}
+            </FormLabel>
+            {description && (
+              <FormDescription>{description}</FormDescription>
+            )}
+          </div>
+          <FormControl>
+            <Switch
+              checked={Boolean(field.value)}
+              onCheckedChange={field.onChange}
+            />
+          </FormControl>
+        </FormItem>
       )}
-    </div>
-  );
-}
-
-function NumberField({
-  id,
-  label,
-  value,
-  onChange,
-}: {
-  id: string;
-  label: string;
-  value: number;
-  onChange: (v: number) => void;
-}) {
-  return (
-    <div>
-      <Label htmlFor={id}>{label}</Label>
-      <Input
-        id={id}
-        type="number"
-        min={0}
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-      />
-    </div>
-  );
-}
-
-function Checkbox({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: boolean;
-  onChange: (v: boolean) => void;
-}) {
-  return (
-    <label className="flex items-center gap-2 text-sm text-slate-700">
-      <input
-        type="checkbox"
-        checked={value}
-        onChange={(e) => onChange(e.target.checked)}
-        className="h-4 w-4"
-      />
-      {label}
-    </label>
+    />
   );
 }
 
 function ColorField({
-  id,
+  form,
+  name,
   label,
-  value,
-  onChange,
 }: {
-  id: string;
+  form: ReturnType<typeof useForm<BrandingForm>>;
+  name: keyof BrandingForm;
   label: string;
-  value: string;
-  onChange: (v: string) => void;
 }) {
   return (
-    <div>
-      <Label htmlFor={id}>{label}</Label>
-      <div className="flex items-center gap-2">
-        <input
-          id={id}
-          type="color"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="h-10 w-12 rounded border border-slate-300 cursor-pointer"
-        />
-        <Input
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="font-mono text-xs"
-        />
+    <FormField
+      control={form.control}
+      name={name}
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel>{label}</FormLabel>
+          <div className={cn("flex items-center gap-2 rounded-lg border border-input bg-background pr-2 transition focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-1")}>
+            <input
+              type="color"
+              value={field.value || "#000000"}
+              onChange={(e) => field.onChange(e.target.value)}
+              aria-label={`${label} color`}
+              className="h-10 w-12 rounded-l-lg border-r border-input cursor-pointer bg-transparent"
+            />
+            <input
+              type="text"
+              value={field.value}
+              onChange={(e) => field.onChange(e.target.value)}
+              className="flex-1 bg-transparent text-sm font-mono outline-none placeholder:text-muted-foreground"
+            />
+          </div>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  );
+}
+
+function SettingsSkeleton() {
+  return (
+    <div className="rounded-2xl border border-border bg-card p-6 space-y-4">
+      <Skeleton className="h-6 w-40" />
+      <Skeleton className="h-4 w-72" />
+      <div className="space-y-3 pt-2">
+        <Skeleton className="h-11 w-full" />
+        <Skeleton className="h-11 w-full" />
+        <Skeleton className="h-11 w-full" />
       </div>
     </div>
   );

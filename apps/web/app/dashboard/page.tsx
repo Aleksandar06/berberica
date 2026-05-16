@@ -5,6 +5,7 @@ import { useEffect } from "react";
 
 import { useAuth } from "@/lib/auth/auth-context";
 import { dashboardForMemberships } from "@/lib/auth/role-router";
+import { Spinner } from "@/components/ui/spinner";
 
 /**
  * Bare /dashboard entrypoint. Once the session is bootstrapped, routes the
@@ -24,8 +25,8 @@ export default function DashboardEntry() {
   }, [bootstrapping, user, memberships, router]);
 
   return (
-    <div className="min-h-[40vh] grid place-items-center text-sm text-slate-500">
-      Loading your dashboard…
+    <div className="min-h-[60vh] grid place-items-center">
+      <Spinner label="Loading your dashboard…" size="md" />
     </div>
   );
 }

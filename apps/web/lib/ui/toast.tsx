@@ -1,90 +1,52 @@
 "use client";
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useState,
-  type ReactNode,
-} from "react";
-
-type ToastKind = "success" | "error" | "info";
-
-interface Toast {
-  id: number;
-  kind: ToastKind;
-  message: string;
-}
-
-interface ToastApi {
-  success(message: string): void;
-  error(message: string): void;
-  info(message: string): void;
-}
-
-const ToastContext = createContext<ToastApi | null>(null);
+import { type ReactNode } from "react";
+import { toast as sonnerToast } from "sonner";
 
 /**
- * Minimal toast system. Renders a fixed bottom-right stack, auto-dismisses
- * after 4 seconds. Components call `useToast().error("…")` etc.
+ * Toast helpers.
  *
- * Intentionally tiny — feature-rich toast libraries (sonner, react-hot-toast)
- * are easy to swap in later without changing call sites.
+ * History: pre-Phase-1 this was a hand-rolled context provider with a
+ * fixed bottom-right stack. Phase 1 swaps the runtime over to Sonner
+ * (mounted in `<Providers>`), but keeps the `useToast()` API surface
+ * identical so every existing call site (`toast.success(...)`,
+ * `toast.error(...)`) keeps working without an edit.
  */
-export function ToastProvider({ children }: { children: ReactNode }) {
-  const [toasts, setToasts] = useState<Toast[]>([]);
 
-  const remove = useCallback((id: number) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
-  }, []);
-
-  const push = useCallback(
-    (kind: ToastKind, message: string) => {
-      const id = Date.now() + Math.random();
-      setToasts((prev) => [...prev, { id, kind, message }]);
-      setTimeout(() => remove(id), 4000);
-    },
-    [remove],
-  );
-
-  const api: ToastApi = {
-    success: (m) => push("success", m),
-    error: (m) => push("error", m),
-    info: (m) => push("info", m),
-  };
-
-  return (
-    <ToastContext.Provider value={api}>
-      {children}
-      <div
-        aria-live="polite"
-        aria-atomic
-        className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm"
-      >
-        {toasts.map((t) => (
-          <div
-            key={t.id}
-            role="status"
-            className={`rounded-md shadow-lg px-4 py-3 text-sm text-white ${
-              t.kind === "success"
-                ? "bg-emerald-600"
-                : t.kind === "error"
-                  ? "bg-red-600"
-                  : "bg-slate-700"
-            }`}
-          >
-            {t.message}
-          </div>
-        ))}
-      </div>
-    </ToastContext.Provider>
-  );
+interface ToastApi {
+  success(message: string, opts?: { description?: ReactNode }): void;
+  error(message: string, opts?: { description?: ReactNode }): void;
+  info(message: string, opts?: { description?: ReactNode }): void;
+  warning(message: string, opts?: { description?: ReactNode }): void;
+  dismiss(): void;
 }
 
+const api: ToastApi = {
+  success: (m, opts) => sonnerToast.success(m, opts),
+  error: (m, opts) => sonnerToast.error(m, opts),
+  info: (m, opts) => sonnerToast.message(m, opts),
+  warning: (m, opts) => sonnerToast.warning(m, opts),
+  dismiss: () => sonnerToast.dismiss(),
+};
+
+/**
+ * Hook kept for source-compat. Sonner is module-scoped under the hood,
+ * so unlike the old `ToastProvider`-bound implementation, this hook no
+ * longer throws when called outside a provider — it just routes through
+ * the Sonner toaster mounted in `<Providers>`.
+ */
 export function useToast(): ToastApi {
-  const ctx = useContext(ToastContext);
-  if (!ctx) throw new Error("useToast must be used inside <ToastProvider>");
-  return ctx;
+  return api;
+}
+
+/**
+ * Backwards-compat no-op. The old `<ToastProvider>` mounted the stack
+ * itself; Sonner mounts via `<Toaster>` in `<Providers>` now. Keeping
+ * this export as a passthrough avoids breaking any code that still
+ * wraps a subtree in it.
+ */
+export function ToastProvider({ children }: { children: ReactNode }) {
+  return <>{children}</>;
 }
 
 /** Convenience: turn unknown errors into a string for toasting. */
@@ -93,3 +55,6 @@ export function errorMessage(err: unknown): string {
   if (typeof err === "string") return err;
   return "Something went wrong";
 }
+
+/** Direct named export for code that prefers a non-hook import. */
+export const toast = api;

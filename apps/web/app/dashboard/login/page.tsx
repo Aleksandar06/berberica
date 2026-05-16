@@ -1,13 +1,26 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
-import { useState, type FormEvent } from "react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/auth-context";
+import { AuthLayout } from "@/components/auth/auth-layout";
 import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
+import { loginInputSchema, type LoginInput } from "@scheduling/schemas";
 
 /**
  * Login page. Single screen for all three roles — the post-login router
@@ -15,95 +28,123 @@ import { Label } from "@/components/ui/label";
  */
 export default function LoginPage() {
   const { login } = useAuth();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
-  async function onSubmit(e: FormEvent) {
-    e.preventDefault();
-    setSubmitting(true);
-    setError(null);
+  const form = useForm<LoginInput>({
+    resolver: zodResolver(loginInputSchema),
+    defaultValues: { email: "", password: "" },
+  });
+
+  async function onSubmit(values: LoginInput) {
+    setFormError(null);
     try {
-      await login(email, password);
+      await login(values.email, values.password);
       // login() handles the post-success redirect via the role router.
     } catch (err) {
-      setError(
+      setFormError(
         err instanceof ApiError
           ? err.message
           : "Could not sign in. Please try again.",
       );
-    } finally {
-      setSubmitting(false);
     }
   }
 
+  // Dev-only seed credentials block. Gated on NODE_ENV so it never ships
+  // to production — keep this even if the build flow is supposed to omit
+  // it; defense in depth.
+  const isDev = process.env.NODE_ENV !== "production";
+
   return (
-    <main className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
-      <form
-        onSubmit={onSubmit}
-        className="w-full max-w-md bg-white rounded-lg border shadow-sm p-8 space-y-5"
-        noValidate
-      >
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold text-slate-900">Sign in</h1>
-          <p className="text-sm text-slate-600">
-            Use your account to access your dashboard.
-          </p>
-        </div>
+    <AuthLayout>
+      <Form {...form}>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="bg-card border border-border rounded-2xl shadow-sm p-6 sm:p-8 space-y-5"
+          noValidate
+        >
+            <div className="space-y-1.5">
+              <h1 className="text-h1 text-foreground">Welcome back</h1>
+              <p className="text-sm text-muted-foreground">
+                Sign in to manage your bookings.
+              </p>
+            </div>
 
-        {error && (
-          <div
-            role="alert"
-            className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
-          >
-            {error}
+            {formError && (
+              <div
+                role="alert"
+                className="rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2.5 text-sm text-destructive"
+              >
+                {formError}
+              </div>
+            )}
+
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input type="email" autoComplete="email" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Password</FormLabel>
+                  <FormControl>
+                    <PasswordInput autoComplete="current-password" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <Button
+              type="submit"
+              size="lg"
+              className="w-full"
+              loading={form.formState.isSubmitting}
+            >
+              Sign in
+            </Button>
+
+            <p className="text-sm text-muted-foreground text-center">
+              New customer?{" "}
+              <Link
+                href="/dashboard/register"
+                className="text-primary font-medium hover:underline"
+              >
+                Create an account
+              </Link>
+            </p>
+        </form>
+      </Form>
+
+      {isDev && (
+        <details
+          className="mt-4 rounded-xl border border-dashed border-border bg-muted/50 p-3 text-xs text-muted-foreground"
+          // Closed by default — keeps the production-ish polish even in
+          // dev while still being a single-click reveal for seeding.
+        >
+          <summary className="cursor-pointer font-medium text-foreground">
+            Dev seed credentials
+          </summary>
+          <div className="mt-2 space-y-1.5 font-mono">
+            <p>admin@elite-barbers.test</p>
+            <p>admin@smile-dental.test</p>
+            <p>superadmin@example.com</p>
+            <p className="pt-1 border-t border-border/50">
+              password: <span className="text-foreground">dev-password-123</span>
+            </p>
           </div>
-        )}
-
-        <div>
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            autoComplete="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </div>
-        <div>
-          <Label htmlFor="password">Password</Label>
-          <Input
-            id="password"
-            type="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
-
-        <Button type="submit" disabled={submitting} className="w-full">
-          {submitting ? "Signing in…" : "Sign in"}
-        </Button>
-
-        <p className="text-sm text-slate-600 text-center">
-          New customer?{" "}
-          <Link
-            href="/dashboard/register"
-            className="text-blue-600 hover:underline"
-          >
-            Create an account
-          </Link>
-        </p>
-        <p className="text-xs text-slate-400 text-center">
-          Seed credentials for dev: <code>admin@elite-barbers.test</code>{" "}
-          <code>admin@smile-dental.test</code>{" "}
-          <code>superadmin@example.com</code> (all password{" "}
-          <code>dev-password-123</code>)
-        </p>
-      </form>
-    </main>
+        </details>
+      )}
+    </AuthLayout>
   );
 }
