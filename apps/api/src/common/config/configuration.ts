@@ -6,7 +6,13 @@
 export interface AppConfig {
   nodeEnv: "development" | "production" | "test";
   port: number;
-  webOrigin: string;
+  /**
+   * One or more allowed web origins for CORS. In dev this is a single
+   * `http://localhost:3000`; in production it's typically a comma-
+   * separated list (`https://app.glamora.com,https://glamora.vercel.app`)
+   * so production + preview deploys can both call the same API.
+   */
+  webOrigins: string[];
 }
 
 export interface JwtConfig {
@@ -46,8 +52,13 @@ export default function configuration(): RootConfig {
   return {
     app: {
       nodeEnv,
-      port: Number(process.env.API_PORT ?? 4000),
-      webOrigin: process.env.WEB_ORIGIN ?? "http://localhost:3000",
+      // Hosted platforms (Railway, Render, Fly) inject $PORT — respect it
+      // first. Fall back to API_PORT for the local docker-compose flow.
+      port: Number(process.env.PORT ?? process.env.API_PORT ?? 4000),
+      webOrigins: (process.env.WEB_ORIGIN ?? "http://localhost:3000")
+        .split(",")
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0),
     },
     jwt: {
       accessSecret: requireEnv("JWT_ACCESS_SECRET"),

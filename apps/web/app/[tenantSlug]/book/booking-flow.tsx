@@ -763,7 +763,7 @@ function GuestDetailsForm({
                 <Input type="email" autoComplete="email" {...field} />
               </FormControl>
               <FormDescription>
-                We'll send a 6-digit code to confirm your booking.
+                We&apos;ll send a 6-digit code to confirm your booking.
               </FormDescription>
               <FormMessage />
             </FormItem>

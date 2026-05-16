@@ -32,10 +32,19 @@ async function bootstrap(): Promise<void> {
   // Sensible security headers (no CSP because we serve no HTML; the API
   // is JSON-only).
   await app.register(fastifyHelmet, { contentSecurityPolicy: false });
-  // CORS — allow the web app to call with credentials so cookies flow.
+  // CORS — explicit allowlist of web origins (comma-separated WEB_ORIGIN).
+  // Vercel preview URLs change per deploy, so we accept the production
+  // origin + any `https://*-<team>.vercel.app` preview that matches one of
+  // the configured origins by suffix. Credentials are on so cookies flow.
+  const allowed = new Set(cfg.app.webOrigins);
   await app.register(fastifyCors, {
-    origin: cfg.app.webOrigin,
     credentials: true,
+    origin: (origin, cb) => {
+      // Server-to-server / curl have no Origin header — let those through.
+      if (!origin) return cb(null, true);
+      if (allowed.has(origin)) return cb(null, true);
+      cb(new Error(`CORS: origin not allowed: ${origin}`), false);
+    },
   });
 
   // --- Routing -----------------------------------------------------------

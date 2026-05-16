@@ -1,0 +1,20 @@
+# Root .dockerignore — used when the API Dockerfile uses the repo root as
+# build context. Excludes anything that doesn't need to land in the image
+# layer cache.
+**/node_modules
+**/dist
+**/.turbo
+**/.next
+**/out
+**/build
+**/coverage
+**/*.log
+**/.env
+**/.env.local
+**/.env.*.local
+.git
+.gitignore
+.vscode
+.idea
+.claude
+README.md
