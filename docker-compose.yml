@@ -1,6 +1,12 @@
 # Local development infrastructure.
 # Production uses Supabase (Postgres + Storage) and Upstash (Redis);
 # these containers exist only for local dev parity.
+#
+# Pin the compose project name so docker volumes (`berberica_postgres-data`
+# etc.) stay stable regardless of which folder the repo is checked out
+# into — otherwise renaming the workspace would orphan all dev data.
+name: berberica
+
 services:
   postgres:
     image: postgres:16-alpine

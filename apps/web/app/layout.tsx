@@ -12,7 +12,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Glamora — Book beauty, wellness & barbershop appointments",
+  title: "Berberica — Book beauty, wellness & barbershop appointments",
   description:
     "Multi-tenant scheduling platform for hair, beauty, and wellness businesses.",
 };

@@ -38,9 +38,9 @@ export function AuthLayout({ children }: { children: ReactNode }) {
           className="relative inline-flex items-center gap-2.5 text-base font-semibold w-fit"
         >
           <span className="h-9 w-9 rounded-xl bg-primary-foreground/15 grid place-items-center text-base font-bold">
-            G
+            B
           </span>
-          Glamora
+          Berberica
         </Link>
 
         <div className="relative space-y-5 max-w-md">
@@ -65,7 +65,7 @@ export function AuthLayout({ children }: { children: ReactNode }) {
         </div>
 
         <p className="relative text-xs text-primary-foreground/60">
-          © {new Date().getFullYear()} Glamora
+          © {new Date().getFullYear()} Berberica
         </p>
       </aside>
 

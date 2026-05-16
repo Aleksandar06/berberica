@@ -98,11 +98,11 @@ function buildIcsDataUrl(args: {
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//Glamora//Booking//EN",
+    "PRODID:-//Berberica//Booking//EN",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
     "BEGIN:VEVENT",
-    `UID:${esc(args.uid)}@glamora`,
+    `UID:${esc(args.uid)}@berberica`,
     `DTSTAMP:${formatIcs(DateTime.utc())}`,
     `DTSTART:${formatIcs(args.start)}`,
     `DTEND:${formatIcs(args.end)}`,

@@ -8,7 +8,7 @@
 # `@scheduling/schemas`.
 #
 # The image is built from the REPO ROOT, not from `apps/api`:
-#     docker build -f apps/api/Dockerfile -t glamora-api .
+#     docker build -f apps/api/Dockerfile -t berberica-api .
 # Railway / Render do this automatically when given `dockerfilePath` +
 # the repo as build context.
 # =============================================================================

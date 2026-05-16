@@ -9,7 +9,7 @@ export interface AppConfig {
   /**
    * One or more allowed web origins for CORS. In dev this is a single
    * `http://localhost:3000`; in production it's typically a comma-
-   * separated list (`https://app.glamora.com,https://glamora.vercel.app`)
+   * separated list (`https://app.berberica.com,https://berberica.vercel.app`)
    * so production + preview deploys can both call the same API.
    */
   webOrigins: string[];

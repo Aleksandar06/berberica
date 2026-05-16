@@ -183,7 +183,7 @@ function TenantFooter({ profile }: { profile: PublicTenantProfile }) {
               href="/"
               className="font-medium text-foreground hover:text-primary transition"
             >
-              Glamora
+              Berberica
             </Link>
           </p>
         </div>

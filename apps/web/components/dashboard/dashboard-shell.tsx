@@ -109,10 +109,10 @@ export function DashboardShell({ title, nav, children }: ShellProps) {
               aria-hidden
               className="h-7 w-7 rounded-lg bg-primary text-primary-foreground grid place-items-center text-sm font-bold shrink-0"
             >
-              G
+              B
             </span>
             <span className="font-semibold text-foreground truncate">
-              Glamora
+              Berberica
             </span>
           </Link>
 
@@ -217,9 +217,9 @@ export function DashboardShell({ title, nav, children }: ShellProps) {
                 aria-hidden
                 className="h-7 w-7 rounded-lg bg-primary text-primary-foreground grid place-items-center text-sm font-bold"
               >
-                G
+                B
               </span>
-              Glamora
+              Berberica
             </SheetTitle>
             <SheetDescription>{title}</SheetDescription>
           </SheetHeader>

@@ -182,9 +182,9 @@ function SiteHeader() {
             aria-hidden
             className="h-7 w-7 rounded-lg bg-primary text-primary-foreground grid place-items-center text-sm font-bold"
           >
-            G
+            B
           </span>
-          Glamora
+          Berberica
         </Link>
         <nav className="flex items-center gap-1 sm:gap-2">
           <Link
@@ -226,7 +226,7 @@ function SiteFooter() {
   return (
     <footer className="border-t border-border bg-background">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
-        <p>© {new Date().getFullYear()} Glamora — multi-tenant scheduling.</p>
+        <p>© {new Date().getFullYear()} Berberica — multi-tenant scheduling.</p>
         <div className="flex items-center gap-4">
           <Link href="/dashboard/login" className="hover:text-foreground transition">
             Sign in
