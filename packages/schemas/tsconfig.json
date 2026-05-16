@@ -1,0 +1,15 @@
+{
+  "extends": "@scheduling/config/tsconfig.base.json",
+  "compilerOptions": {
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "declaration": true,
+    "declarationMap": true,
+    // No `types` array — this package is browser-safe (no @types/node).
+    "types": []
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

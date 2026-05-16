@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---------------------------------------------------------------------------
+ * Brand variables — set per-tenant by app/[tenantSlug]/layout.tsx via inline
+ * style on the wrapping div. Default values here cover the platform pages.
+ * ------------------------------------------------------------------------- */
+:root {
+  --brand-primary: #0f172a;
+  --brand-secondary: #3b82f6;
+  --brand-accent: #f59e0b;
+  --brand-on-primary: #ffffff;
+}
+
+/* Reusable component classes that read from the brand variables. Components
+ * use these (or arbitrary Tailwind values via var(...)) so each tenant looks
+ * distinct without per-tenant Tailwind builds. */
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed;
+    background-color: var(--brand-primary);
+    color: var(--brand-on-primary);
+  }
+  .btn-primary:hover:not(:disabled) {
+    filter: brightness(1.1);
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium border transition;
+    border-color: var(--brand-primary);
+    color: var(--brand-primary);
+    background-color: transparent;
+  }
+  .btn-secondary:hover {
+    background-color: color-mix(in srgb, var(--brand-primary) 8%, transparent);
+  }
+  .brand-accent {
+    color: var(--brand-accent);
+  }
+  .brand-bg {
+    background-color: var(--brand-primary);
+    color: var(--brand-on-primary);
+  }
+  .brand-ring {
+    --tw-ring-color: var(--brand-primary);
+  }
+}
