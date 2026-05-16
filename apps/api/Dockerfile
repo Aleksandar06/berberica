@@ -54,6 +54,10 @@ RUN pnpm --filter @scheduling/api build
 # Prune dev dependencies so the runtime image is leaner. `deploy` copies a
 # self-contained node_modules into /out — no symlinks, safe to ship.
 RUN pnpm --filter @scheduling/api deploy --prod /out
+# Regenerate the Prisma client INTO the pruned node_modules. `pnpm deploy`
+# creates a fresh /out/node_modules and does not carry over generated files
+# (.prisma/client) from the workspace node_modules, so we regenerate here.
+RUN cd /out && node_modules/.bin/prisma generate --schema=/repo/apps/api/prisma/schema.prisma
 
 # -----------------------------------------------------------------------------
 # Stage 4 — runtime: smallest image with just what the API needs
