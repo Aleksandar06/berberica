@@ -34,6 +34,12 @@ FROM deps AS build
 COPY packages packages
 COPY apps/web apps/web
 
+# Next.js inlines NEXT_PUBLIC_* vars into the client bundle at build time.
+# Railway only injects service variables at runtime, so we accept them as
+# build args and re-export as ENV before `next build`.
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+
 # Build the shared schemas package first (web imports compiled JS from it).
 RUN pnpm --filter @scheduling/schemas build || true
 # `next build` with `output: 'standalone'` produces .next/standalone with a
