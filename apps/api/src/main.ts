@@ -16,7 +16,13 @@ import type {
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
-    new FastifyAdapter({ trustProxy: true }),
+    new FastifyAdapter({
+      trustProxy: true,
+      // Bumped from the 1 MB default so the tenant-branding PATCH can carry
+      // a base64-encoded logo (up to 2 MB raw → ~2.7 MB JSON after base64).
+      // No other endpoint sends bodies anywhere near this size.
+      bodyLimit: 5 * 1024 * 1024,
+    }),
   );
 
   // Pull typed config from the same loader used by app.module.

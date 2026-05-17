@@ -100,8 +100,43 @@ export type AllowedLogoMimeType = (typeof ALLOWED_LOGO_MIME_TYPES)[number];
 
 export const MAX_LOGO_BYTES = 2 * 1024 * 1024; // 2 MB
 
+/**
+ * Cap for the persisted `logoUrl` string. Plain http(s) URLs are tiny;
+ * inline `data:image/...` URLs (browser-uploaded logos base64-encoded into
+ * the column) inflate ~33% over the raw byte size. 4 MB ceiling gives a
+ * generous safety margin over a 2 MB raw image while keeping postgres
+ * happy with the value living in a single text column.
+ */
+const MAX_LOGO_URL_CHARS = 4 * 1024 * 1024;
+
+/**
+ * Accepts either:
+ *   • an http(s) URL — for externally hosted logos
+ *   • a `data:image/<png|jpeg|webp|svg+xml>;base64,...` URL — for the
+ *     browser-upload-to-DB flow (no external storage required for hackathon
+ *     scale; can migrate to S3 later without changing this contract)
+ *
+ * `null` clears the logo; `undefined` leaves it untouched in PATCH.
+ */
+const DATA_URL_RE =
+  /^data:image\/(png|jpeg|webp|svg\+xml);base64,[A-Za-z0-9+/=]+$/;
+const HTTP_URL_RE = /^https?:\/\/[^\s]+$/i;
+
+const logoUrlSchema = z
+  .string()
+  .max(MAX_LOGO_URL_CHARS)
+  .refine(
+    (val) => DATA_URL_RE.test(val) || HTTP_URL_RE.test(val),
+    {
+      message:
+        "Must be an http(s) URL or a data:image base64 URI (PNG, JPEG, WEBP, SVG)",
+    },
+  )
+  .nullable()
+  .optional();
+
 export const tenantBrandingUpdateInputSchema = z.object({
-  logoUrl: z.string().url().max(2048).nullable().optional(),
+  logoUrl: logoUrlSchema,
   primaryColor: hexColorSchema.nullable().optional(),
   secondaryColor: hexColorSchema.nullable().optional(),
   accentColor: hexColorSchema.nullable().optional(),
