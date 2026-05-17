@@ -19,6 +19,7 @@ import { AuthModule } from "./modules/auth/auth.module";
 import { AvailabilityModule } from "./modules/availability/availability.module";
 import { BookingsModule } from "./modules/bookings/bookings.module";
 import { BusinessModule } from "./modules/business/business.module";
+import { NotificationsModule } from "./modules/notifications/notifications.module";
 import { PublicModule } from "./modules/public/public.module";
 import { ServicesModule } from "./modules/services/services.module";
 import { StaffModule } from "./modules/staff/staff.module";
@@ -49,6 +50,7 @@ import { PrismaModule } from "./prisma/prisma.module";
 
     PrismaModule,
     CommonModule,
+    NotificationsModule,
     VerificationModule,
     AuthModule,
     AdminModule,

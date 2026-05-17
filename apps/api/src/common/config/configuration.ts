@@ -32,11 +32,21 @@ export interface RedisConfig {
   url: string;
 }
 
+export interface EmailConfig {
+  /** Resend API key. Required to actually send mail; absent → log-only. */
+  apiKey: string | null;
+  /** Default From: address (e.g. "Berberica <noreply@berberica.com>"). */
+  from: string;
+  /** Base URL the verify-email link points back to (the web app). */
+  webBaseUrl: string;
+}
+
 export interface RootConfig {
   app: AppConfig;
   jwt: JwtConfig;
   cookie: CookieConfig;
   redis: RedisConfig;
+  email: EmailConfig;
 }
 
 function requireEnv(name: string): string {
@@ -81,6 +91,15 @@ export default function configuration(): RootConfig {
     },
     redis: {
       url: process.env.REDIS_URL ?? "redis://localhost:6379",
+    },
+    email: {
+      apiKey: process.env.RESEND_API_KEY ?? null,
+      from: process.env.EMAIL_FROM ?? "Berberica <onboarding@resend.dev>",
+      // First origin doubles as the public web URL for verify-email links.
+      // WEB_ORIGIN may be comma-separated (prod + preview); take the first.
+      webBaseUrl: ((process.env.WEB_ORIGIN ?? "http://localhost:3000").split(
+        ",",
+      )[0] ?? "http://localhost:3000").trim(),
     },
   };
 }

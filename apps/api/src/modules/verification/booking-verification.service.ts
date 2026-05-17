@@ -6,6 +6,7 @@ import {
 import { Prisma } from "@prisma/client";
 
 import { AuditLogService } from "../../common/services/audit-log.service";
+import { NotificationDispatcherService } from "../notifications/notification-dispatcher.service";
 import { PrismaService } from "../../prisma/prisma.service";
 import {
   compareSecret,
@@ -75,6 +76,7 @@ export class BookingVerificationService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditLogService,
+    private readonly dispatcher: NotificationDispatcherService,
   ) {}
 
   // ---------------------------------------------------------------------------
@@ -93,7 +95,7 @@ export class BookingVerificationService {
     const codeHash = hashSecret(code);
     const expiresAt = new Date(Date.now() + OTP_TTL_MS);
 
-    await this.prisma.$transaction(async (tx) => {
+    const notificationId = await this.prisma.$transaction(async (tx) => {
       // Idempotency: invalidate prior unconsumed OTPs for the exact intent.
       await tx.verificationCode.updateMany({
         where: {
@@ -115,7 +117,7 @@ export class BookingVerificationService {
           expiresAt,
         },
       });
-      await tx.notificationEvent.create({
+      const notification = await tx.notificationEvent.create({
         data: {
           tenantId: args.tenantId,
           type: "booking.verify_otp",
@@ -133,8 +135,15 @@ export class BookingVerificationService {
             },
           } as Prisma.JsonObject,
         },
+        select: { id: true },
       });
+      return notification.id;
     });
+
+    // Send the OTP email AFTER the transaction commits so a Resend hiccup
+    // can't roll back the verification row. The dispatcher marks the event
+    // failed on error; users still see the generic 200 and can re-request.
+    await this.dispatcher.dispatch(notificationId);
 
     await this.audit.record({
       action: "verification.guest_otp_issued",

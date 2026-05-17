@@ -2,6 +2,7 @@ import { Injectable, Logger } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 
 import { AuditLogService } from "../../common/services/audit-log.service";
+import { NotificationDispatcherService } from "../notifications/notification-dispatcher.service";
 import { PrismaService } from "../../prisma/prisma.service";
 import {
   compareSecret,
@@ -31,6 +32,7 @@ export class AccountVerificationService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditLogService,
+    private readonly dispatcher: NotificationDispatcherService,
   ) {}
 
   /**
@@ -44,7 +46,7 @@ export class AccountVerificationService {
     const codeHash = hashSecret(token);
     const expiresAt = new Date(Date.now() + ACCOUNT_TOKEN_TTL_MS);
 
-    await this.prisma.$transaction(async (tx) => {
+    const notificationId = await this.prisma.$transaction(async (tx) => {
       // Invalidate prior unconsumed tokens for this email.
       await tx.verificationCode.updateMany({
         where: {
@@ -62,10 +64,10 @@ export class AccountVerificationService {
           expiresAt,
         },
       });
-      // Notification — payload carries the RAW token (Step 14's email channel
-      // turns it into a verify-email link). Sensitive: production log
-      // shippers MUST redact `payload.token`.
-      await tx.notificationEvent.create({
+      // Notification — payload carries the RAW token (the email channel turns
+      // it into a verify-email link). Sensitive: production log shippers MUST
+      // redact `payload.token`.
+      const notification = await tx.notificationEvent.create({
         data: {
           type: "auth.verify_email",
           status: "pending",
@@ -75,8 +77,15 @@ export class AccountVerificationService {
             expiresAt: expiresAt.toISOString(),
           } as Prisma.JsonObject,
         },
+        select: { id: true },
       });
+      return notification.id;
     });
+
+    // Send the verification email AFTER commit. A delivery failure marks
+    // the event `failed` but leaves the verification_code row intact so the
+    // user can self-serve a resend.
+    await this.dispatcher.dispatch(notificationId);
 
     return { token, expiresAt };
   }
