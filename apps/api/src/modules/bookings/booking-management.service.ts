@@ -158,6 +158,52 @@ export class BookingManagementService {
     });
   }
 
+  // -------------------------------------------------------------------------
+  // SET STATUS — daily-driver lifecycle (arrived / no-show / completed)
+  // -------------------------------------------------------------------------
+  // The cancel/reschedule paths each have rich side-effects (notifications,
+  // policy enforcement, slot recomputation). Marking a booking arrived or
+  // no-show is operationally much simpler: just a status flip + audit row.
+  // Kept separate so we don't accidentally inherit the heavier semantics.
+
+  async setStatusByBusiness(
+    bookingId: string,
+    tenantId: string,
+    nextStatus: "confirmed" | "completed" | "no_show",
+    actor: Actor,
+  ): Promise<Booking> {
+    const before = await this.ownership.booking(bookingId, tenantId);
+    if (before.status === "cancelled") {
+      throw new ConflictException({
+        code: "BOOKING_CANCELLED",
+        message: "Cancelled bookings cannot be marked.",
+      });
+    }
+    if (before.status === nextStatus) {
+      return before; // idempotent — re-clicking the active status is a no-op
+    }
+    return this.prisma.$transaction(async (tx) => {
+      const after = await tx.booking.update({
+        where: { id: before.id },
+        data: { status: nextStatus },
+      });
+      await tx.bookingAuditLog.create({
+        data: {
+          tenantId,
+          bookingId: after.id,
+          actorUserId: actor.userId,
+          action: `booking.mark_${nextStatus}`,
+          metadata: {
+            source: "business",
+            actorEmail: actor.email,
+            previousStatus: before.status,
+          } as Prisma.JsonObject,
+        },
+      });
+      return after;
+    });
+  }
+
   // =========================================================================
   // INTERNAL
   // =========================================================================

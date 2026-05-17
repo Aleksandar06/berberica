@@ -362,5 +362,13 @@ export const businessApi = {
         `/api/business/bookings/${id}/reschedule`,
         { method: "POST", body: { newStartAt, reason } },
       ),
+    setStatus: (
+      id: string,
+      status: "confirmed" | "completed" | "no_show",
+    ) =>
+      authedFetch<BusinessBooking>(`/api/business/bookings/${id}/status`, {
+        method: "PATCH",
+        body: { status },
+      }),
   },
 };

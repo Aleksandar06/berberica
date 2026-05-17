@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -14,6 +15,7 @@ import { Prisma, Role } from "@prisma/client";
 import {
   bookingCancelInputSchema,
   bookingRescheduleInputSchema,
+  bookingSetStatusInputSchema,
   businessBookingCreateInputSchema,
   businessBookingsListQuerySchema,
 } from "@scheduling/schemas";
@@ -36,6 +38,7 @@ class BusinessBookingCreateDto extends createZodDto(
 class BookingsListQueryDto extends createZodDto(businessBookingsListQuerySchema) {}
 class BookingCancelDto extends createZodDto(bookingCancelInputSchema) {}
 class BookingRescheduleDto extends createZodDto(bookingRescheduleInputSchema) {}
+class BookingSetStatusDto extends createZodDto(bookingSetStatusInputSchema) {}
 
 @UseGuards(BusinessTenantGuard, TenantRolesGuard)
 @Controller("business/bookings")
@@ -148,5 +151,27 @@ export class BusinessBookingsController {
       body.reason,
       { userId: actor.userId, email: actor.email },
     );
+  }
+
+  // -------------------------------------------------------------------------
+  // SET STATUS — arrived / no-show / completed
+  // -------------------------------------------------------------------------
+  // STAFF role is allowed in addition to TENANT_ADMIN because marking a
+  // customer as arrived is a moment-to-moment shift action — the working
+  // barber is usually STAFF, not the tenant owner.
+
+  @Roles(Role.TENANT_ADMIN, Role.STAFF)
+  @Patch(":id/status")
+  @HttpCode(HttpStatus.OK)
+  setStatus(
+    @CurrentTenant() tenant: TenantContext,
+    @CurrentUser() actor: RequestUser,
+    @Param("id", new ParseUUIDPipe()) id: string,
+    @Body() body: BookingSetStatusDto,
+  ) {
+    return this.management.setStatusByBusiness(id, tenant.id, body.status, {
+      userId: actor.userId,
+      email: actor.email,
+    });
   }
 }

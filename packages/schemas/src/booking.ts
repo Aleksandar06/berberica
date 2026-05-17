@@ -103,6 +103,19 @@ export type BookingRescheduleInput = z.infer<
 >;
 
 // ===========================================================================
+// BOOKING STATUS CHANGE (mark arrived / no-show / completed)
+// ===========================================================================
+// Lets a tenant admin / staff member flip a booking through its non-cancel
+// status lifecycle: pending → confirmed (arrived) → completed, OR pending →
+// no_show. Cancellation goes through the dedicated `/cancel` endpoint
+// because it carries a reason field and emits its own notification.
+
+export const bookingSetStatusInputSchema = z.object({
+  status: z.enum(["confirmed", "completed", "no_show"]),
+});
+export type BookingSetStatusInput = z.infer<typeof bookingSetStatusInputSchema>;
+
+// ===========================================================================
 // BUSINESS BOOKING CREATE — tenant admin / staff creating on behalf
 // ===========================================================================
 // Differs from `bookingRequestInputSchema` in that the customer can be:
