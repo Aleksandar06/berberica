@@ -15,16 +15,20 @@
     />
     <style>
       /* ============================================================
-       * Berberica pitch deck — SCROLL variant.
+       * Berberica pitch deck — SCROLL variant (Apple-style).
        *
-       * Apple-style: full-viewport sections that snap as you scroll.
-       * Content fades + lifts in on intersection. Same brand language
-       * and content as /deck.html (Macedonian, Kočani, UI mockups).
+       * Each section is ~1.7× the viewport tall, and its inner card
+       * is `position: sticky; top: 0; height: 100vh`. Result: the
+       * visual pins in place while you scroll, content fades + lifts
+       * in via scroll-linked animations (animation-timeline: view()
+       * where supported, IntersectionObserver fallback otherwise).
+       *
+       * No scroll-snap — natural, slow, Apple-like pacing.
        *
        * Navigation:
-       *   • Scroll wheel / trackpad / touch → next section
-       *   • Right-side progress rail → click to jump
-       *   • ↓ ↑ / Page Down / Space → snap to next/prev section
+       *   • Scroll wheel / trackpad / touch
+       *   • Right-side TOC rail → click any dot
+       *   • ↓ ↑ / Space / PageDown / PageUp / Home / End / F (fullscreen)
        * ============================================================ */
       :root {
         --bg: #faf7f9;
@@ -39,6 +43,9 @@
         --radius: 1.25rem;
         --shadow-lg: 0 24px 80px -24px hsl(340 82% 36% / 0.18);
         --shadow-md: 0 12px 28px -8px hsl(240 10% 12% / 0.1);
+        /* How tall each section's scroll runway is, in viewport units.
+           Larger = slower / more dwell time on each visual. */
+        --runway: 175vh;
       }
 
       * { box-sizing: border-box; }
@@ -53,13 +60,24 @@
         -webkit-font-smoothing: antialiased;
         font-feature-settings: "ss01" 1, "calt" 1;
       }
-      html {
-        scroll-behavior: smooth;
-        scroll-snap-type: y mandatory;
+      html { scroll-behavior: smooth; }
+
+      /* ---- Top scroll progress bar (Apple touch) ---- */
+      .progress-bar {
+        position: fixed;
+        top: 0; left: 0;
+        height: 3px;
+        width: 100%;
+        z-index: 100;
+        background: transparent;
       }
-      body {
-        scroll-snap-type: y mandatory;
-        overflow-x: hidden;
+      .progress-bar > span {
+        display: block;
+        height: 100%;
+        background: linear-gradient(90deg, var(--primary), hsl(20 90% 65%));
+        transform-origin: left;
+        transform: scaleX(0);
+        will-change: transform;
       }
 
       /* ---- Fixed corner mark ---- */
@@ -94,7 +112,7 @@
         padding-top: 1px;
       }
 
-      /* ---- Right-side progress rail (Apple-style TOC) ---- */
+      /* ---- Right-side TOC rail ---- */
       .rail {
         position: fixed;
         right: 1.5rem;
@@ -122,7 +140,7 @@
         box-shadow: 0 0 0 4px hsl(340 82% 56% / 0.15);
       }
 
-      /* ---- Scroll hint (fades after first scroll) ---- */
+      /* ---- Scroll hint ---- */
       .scroll-hint {
         position: fixed;
         bottom: 1.5rem;
@@ -147,45 +165,109 @@
         0%, 100% { transform: translateY(0); }
         50% { transform: translateY(4px); }
       }
-      @media (prefers-reduced-motion: reduce) {
-        html, body { scroll-behavior: auto; }
-        .scroll-hint-arrow { animation: none; }
-      }
 
-      /* ---- Section base ---- */
+      /* ---- Section base — tall runway with sticky inner content ----
+       * The trick: each .section is ~1.75× viewport tall (the "runway"
+       * a user scrolls through). Inside it, .section-inner is
+       * `position: sticky; top: 0; height: 100vh` so the actual
+       * content visually pins for the duration of that runway. As you
+       * keep scrolling past the runway, the next section's runway
+       * takes over. Result: time spent on each visual scales with
+       * --runway, scroll feels slow + deliberate. */
       .section {
-        min-height: 100vh;
+        position: relative;
+        height: var(--runway);
+      }
+      .section-inner {
+        position: sticky;
+        top: 0;
+        height: 100vh;
         display: flex;
         align-items: center;
         justify-content: center;
         padding: 4rem 4.5rem;
-        position: relative;
-        scroll-snap-align: start;
-        scroll-snap-stop: always;
+        overflow: hidden;
       }
-      .section-inner {
+      .section-content {
         max-width: 1180px;
         width: 100%;
       }
 
-      /* ---- Fade/lift reveal on scroll ---- */
+      /* ---- Reveal animation (modern: scroll-driven) ----
+       * animation-timeline: view() ties the animation progress to how
+       * far the element has scrolled into view. animation-range
+       * 'entry' covers the entry phase (0 = just entered, 100 = fully
+       * inside). We run the fade from 5% through 50% of entry so the
+       * reveal is well underway by the time the element sits in the
+       * middle of the viewport. */
       .reveal {
         opacity: 0;
-        transform: translateY(28px);
+        transform: translateY(40px);
+      }
+
+      @supports (animation-timeline: view()) {
+        .reveal {
+          animation: revealIn linear both;
+          animation-timeline: view();
+          animation-range: entry 5% entry 50%;
+        }
+        @keyframes revealIn {
+          from { opacity: 0; transform: translateY(40px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        /* Staggered children: shift the animation-range so each fires
+           a touch later than the previous one. */
+        .reveal-delay-1 { animation-range: entry 10% entry 55%; }
+        .reveal-delay-2 { animation-range: entry 15% entry 60%; }
+        .reveal-delay-3 { animation-range: entry 20% entry 65%; }
+        .reveal-delay-4 { animation-range: entry 25% entry 70%; }
+      }
+
+      /* ---- Reveal fallback (older browsers): IntersectionObserver
+       * adds .reveal-in when the element enters the viewport. */
+      .reveal.reveal-in {
+        opacity: 1;
+        transform: translateY(0);
         transition:
           opacity 700ms cubic-bezier(0.2, 0.65, 0.2, 1),
           transform 700ms cubic-bezier(0.2, 0.65, 0.2, 1);
       }
-      .reveal.in {
-        opacity: 1;
-        transform: translateY(0);
+      .reveal-delay-1.reveal-in { transition-delay: 80ms; }
+      .reveal-delay-2.reveal-in { transition-delay: 160ms; }
+      .reveal-delay-3.reveal-in { transition-delay: 240ms; }
+      .reveal-delay-4.reveal-in { transition-delay: 320ms; }
+
+      /* ---- Slow parallax effect: visuals translate slightly while
+       * they're pinned. animation-range: cover means "play across the
+       * entire time the element is touching the viewport". */
+      @supports (animation-timeline: view()) {
+        .parallax-up {
+          animation: parallaxUp linear both;
+          animation-timeline: view();
+          animation-range: cover;
+        }
+        @keyframes parallaxUp {
+          from { transform: translateY(40px); }
+          to { transform: translateY(-40px); }
+        }
+        .parallax-zoom {
+          animation: parallaxZoom linear both;
+          animation-timeline: view();
+          animation-range: cover;
+        }
+        @keyframes parallaxZoom {
+          from { transform: scale(0.92); opacity: 0.4; }
+          30%, 70% { transform: scale(1); opacity: 1; }
+          to { transform: scale(0.92); opacity: 0.4; }
+        }
       }
-      .reveal-delay-1 { transition-delay: 80ms; }
-      .reveal-delay-2 { transition-delay: 160ms; }
-      .reveal-delay-3 { transition-delay: 240ms; }
-      .reveal-delay-4 { transition-delay: 320ms; }
+
+      /* ---- Respect reduced motion ---- */
       @media (prefers-reduced-motion: reduce) {
-        .reveal { opacity: 1; transform: none; transition: none; }
+        html { scroll-behavior: auto; }
+        .reveal { opacity: 1; transform: none; }
+        .scroll-hint-arrow { animation: none; }
+        .parallax-up, .parallax-zoom { animation: none; transform: none; }
       }
 
       /* ---- Typography ---- */
@@ -208,13 +290,6 @@
         letter-spacing: -0.02em;
         margin: 0 0 1.25rem;
       }
-      h2 {
-        font-size: clamp(1.5rem, 3vw, 2.5rem);
-        line-height: 1.15;
-        font-weight: 700;
-        letter-spacing: -0.015em;
-        margin: 0 0 1rem;
-      }
       h3 { font-size: 1.125rem; font-weight: 700; margin: 0 0 0.45rem; }
       .lead {
         font-size: clamp(1.05rem, 1.45vw, 1.3rem);
@@ -223,7 +298,7 @@
         max-width: 62ch;
       }
 
-      /* ---- Section 1 (HERO) ---- */
+      /* ---- HERO ---- */
       .section-hero {
         background:
           radial-gradient(ellipse at top right, hsl(340 82% 56% / 0.14) 0%, transparent 55%),
@@ -249,7 +324,7 @@
       }
       .hero-meta strong { color: var(--fg); }
 
-      /* ---- Problem ---- */
+      /* ---- Problem grid ---- */
       .problem-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -274,7 +349,7 @@
       }
       .problem-card p { margin: 0; color: var(--muted-fg); line-height: 1.5; font-size: 0.95rem; }
 
-      /* ---- Solution ---- */
+      /* ---- Solution grid ---- */
       .solution-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -393,11 +468,7 @@
         color: #fff;
         border-color: var(--primary);
       }
-      .mock-date-day {
-        font-size: 0.55rem;
-        text-transform: uppercase;
-        opacity: 0.7;
-      }
+      .mock-date-day { font-size: 0.55rem; text-transform: uppercase; opacity: 0.7; }
       .mock-date-num { font-size: 0.85rem; font-weight: 700; }
       .mock-slot-group {
         font-size: 0.55rem;
@@ -521,7 +592,6 @@
       .browser-dot:nth-child(1) { background: hsl(0 80% 56% / 0.6); }
       .browser-dot:nth-child(2) { background: hsl(38 92% 50% / 0.7); }
       .browser-dot:nth-child(3) { background: hsl(152 60% 40% / 0.7); }
-
       .mock-today-time {
         font-size: 2.25rem;
         font-weight: 800;
@@ -583,7 +653,6 @@
       }
       .mock-btn-primary { background: var(--primary); color: #fff; }
       .mock-btn-ghost { background: transparent; color: var(--muted-fg); }
-
       .mock-kpi-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -816,7 +885,8 @@
       }
 
       @media (max-width: 900px) {
-        .section { padding: 4rem 1.5rem; }
+        :root { --runway: 200vh; } /* extra dwell time on mobile */
+        .section-inner { padding: 4rem 1.5rem; }
         .problem-grid,
         .solution-grid,
         .how-it-works,
@@ -829,13 +899,17 @@
     </style>
   </head>
   <body>
+    <!-- Top scroll progress bar -->
+    <div class="progress-bar" aria-hidden="true">
+      <span id="progress-fill"></span>
+    </div>
+
     <a href="https://web-production-42e42.up.railway.app" class="mark">
       <span class="mark-glyph">б</span>
       Berberica
     </a>
 
-    <!-- Right-side TOC rail -->
-    <nav class="rail" aria-label="Navigacija">
+    <nav class="rail" aria-label="Навигација">
       <button class="rail-dot active" data-target="0" title="Berberica"></button>
       <button class="rail-dot" data-target="1" title="Проблемот"></button>
       <button class="rail-dot" data-target="2" title="Решението"></button>
@@ -847,33 +921,30 @@
       <button class="rail-dot" data-target="8" title="Благодариме"></button>
     </nav>
 
-    <!-- Scroll hint -->
     <div class="scroll-hint" id="scroll-hint">
-      <span>скролај</span>
+      <span>скролај полека</span>
       <span class="scroll-hint-arrow">↓</span>
     </div>
 
-    <!-- ============================================================
-         SECTIONS — each is a snap target, scroll to advance.
-         ============================================================ -->
-
     <!-- 1. HERO -->
     <section class="section section-hero" id="s0">
-      <div class="orb" style="top: -100px; right: -50px; height: 380px; width: 380px; background: hsl(340 82% 56%);"></div>
-      <div class="orb" style="bottom: -80px; left: -60px; height: 320px; width: 320px; background: hsl(20 90% 65%);"></div>
-      <div class="section-inner hero-content">
-        <div class="hero-glyph reveal">б</div>
-        <h1 class="reveal reveal-delay-1">Berberica</h1>
-        <p class="lead reveal reveal-delay-2" style="margin: 0 auto;">
-          Резервации без неред и допишување — една платформа за берберници,
-          салони и студија за убавина.
-        </p>
-        <div class="hero-meta reveal reveal-delay-3">
-          <span><strong>Хакатон 2026</strong></span>
-          <span aria-hidden>·</span>
-          <span>Изработено во <strong>Кочани</strong></span>
-          <span aria-hidden>·</span>
-          <span>Достапно на <strong>македонски + English</strong></span>
+      <div class="section-inner">
+        <div class="orb parallax-up" style="top: -100px; right: -50px; height: 380px; width: 380px; background: hsl(340 82% 56%);"></div>
+        <div class="orb parallax-up" style="bottom: -80px; left: -60px; height: 320px; width: 320px; background: hsl(20 90% 65%);"></div>
+        <div class="section-content hero-content">
+          <div class="hero-glyph reveal">б</div>
+          <h1 class="reveal reveal-delay-1">Berberica</h1>
+          <p class="lead reveal reveal-delay-2" style="margin: 0 auto;">
+            Резервации без неред и допишување — една платформа за берберници,
+            салони и студија за убавина.
+          </p>
+          <div class="hero-meta reveal reveal-delay-3">
+            <span><strong>Хакатон 2026</strong></span>
+            <span aria-hidden>·</span>
+            <span>Изработено во <strong>Кочани</strong></span>
+            <span aria-hidden>·</span>
+            <span>Достапно на <strong>македонски + English</strong></span>
+          </div>
         </div>
       </div>
     </section>
@@ -881,36 +952,38 @@
     <!-- 2. PROBLEM -->
     <section class="section" id="s1">
       <div class="section-inner">
-        <span class="eyebrow reveal">Проблемот</span>
-        <h1 class="reveal reveal-delay-1">Резервациите се сè уште скршени.</h1>
-        <p class="lead reveal reveal-delay-2">
-          Индустрија вредна милијарди евра годишно — а закажување шишање сè
-          уште се прави преку телефон и Instagram пораки.
-        </p>
-        <div class="problem-grid">
-          <div class="problem-card reveal reveal-delay-2">
-            <div class="problem-stat">73%</div>
-            <h3>Резервации преку телефон / DM</h3>
-            <p>
-              Клиентите ја губат паузата на работа обидувајќи се да го фатат
-              местото на врска. Местата го губат денот одговарајќи.
-            </p>
-          </div>
-          <div class="problem-card reveal reveal-delay-3">
-            <div class="problem-stat">€2K+</div>
-            <h3>Изгубени по стол, месечно</h3>
-            <p>
-              Не-дојдени клиенти, двојни резервации и пропуштени термини
-              тивко ја јадат маржата на секое мало место.
-            </p>
-          </div>
-          <div class="problem-card reveal reveal-delay-4">
-            <div class="problem-stat">0</div>
-            <h3>Сопственици што знаат колку заработиле минатата недела</h3>
-            <p>
-              Без табла, без агрегација, без „која услуга донесе најмногу".
-              Се претпоставува, или прашуваш сметководителот во март.
-            </p>
+        <div class="section-content">
+          <span class="eyebrow reveal">Проблемот</span>
+          <h1 class="reveal reveal-delay-1">Резервациите се сè уште скршени.</h1>
+          <p class="lead reveal reveal-delay-2">
+            Индустрија вредна милијарди евра годишно — а закажување шишање сè
+            уште се прави преку телефон и Instagram пораки.
+          </p>
+          <div class="problem-grid">
+            <div class="problem-card reveal reveal-delay-2">
+              <div class="problem-stat">73%</div>
+              <h3>Резервации преку телефон / DM</h3>
+              <p>
+                Клиентите ја губат паузата на работа обидувајќи се да го фатат
+                местото на врска. Местата го губат денот одговарајќи.
+              </p>
+            </div>
+            <div class="problem-card reveal reveal-delay-3">
+              <div class="problem-stat">€2K+</div>
+              <h3>Изгубени по стол, месечно</h3>
+              <p>
+                Не-дојдени клиенти, двојни резервации и пропуштени термини
+                тивко ја јадат маржата на секое мало место.
+              </p>
+            </div>
+            <div class="problem-card reveal reveal-delay-4">
+              <div class="problem-stat">0</div>
+              <h3>Сопственици што знаат колку заработиле минатата недела</h3>
+              <p>
+                Без табла, без агрегација, без „која услуга донесе најмногу".
+                Се претпоставува, или прашуваш сметководителот во март.
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -919,38 +992,40 @@
     <!-- 3. SOLUTION -->
     <section class="section" id="s2">
       <div class="section-inner">
-        <span class="eyebrow reveal">Решението</span>
-        <h1 class="reveal reveal-delay-1">Една платформа. Три завршени задачи.</h1>
-        <p class="lead reveal reveal-delay-2">
-          Berberica е страница за клиентите, распоред за тимот и финансиски
-          преглед за сопственикот — на едно место.
-        </p>
-        <div class="solution-grid">
-          <div class="solution-card reveal reveal-delay-2">
-            <div class="solution-icon">🏪</div>
-            <h3>Страница за 60 секунди</h3>
-            <p>
-              Секое место добива брендирана страница за резервации со свое
-              лого, бои и адреса — на
-              <code style="font-size: 0.85em;">/твоето-име</code>.
-            </p>
-          </div>
-          <div class="solution-card reveal reveal-delay-3">
-            <div class="solution-icon">📱</div>
-            <h3>Резервации што работат</h3>
-            <p>
-              Слободни термини во реално време, верификација преку имејл за
-              гости, без двојни резервации. Mobile-first — текот изгледа
-              како апликација на телефон.
-            </p>
-          </div>
-          <div class="solution-card reveal reveal-delay-4">
-            <div class="solution-icon">💰</div>
-            <h3>Заработка на прв тап</h3>
-            <p>
-              „Колку заработивме оваа недела? Кој е најуспешен?"
-              Одговорено со еден тап од почетниот екран.
-            </p>
+        <div class="section-content">
+          <span class="eyebrow reveal">Решението</span>
+          <h1 class="reveal reveal-delay-1">Една платформа. Три завршени задачи.</h1>
+          <p class="lead reveal reveal-delay-2">
+            Berberica е страница за клиентите, распоред за тимот и финансиски
+            преглед за сопственикот — на едно место.
+          </p>
+          <div class="solution-grid">
+            <div class="solution-card reveal reveal-delay-2">
+              <div class="solution-icon">🏪</div>
+              <h3>Страница за 60 секунди</h3>
+              <p>
+                Секое место добива брендирана страница за резервации со свое
+                лого, бои и адреса — на
+                <code style="font-size: 0.85em;">/твоето-име</code>.
+              </p>
+            </div>
+            <div class="solution-card reveal reveal-delay-3">
+              <div class="solution-icon">📱</div>
+              <h3>Резервации што работат</h3>
+              <p>
+                Слободни термини во реално време, верификација преку имејл за
+                гости, без двојни резервации. Mobile-first — текот изгледа како
+                апликација на телефон.
+              </p>
+            </div>
+            <div class="solution-card reveal reveal-delay-4">
+              <div class="solution-icon">💰</div>
+              <h3>Заработка на прв тап</h3>
+              <p>
+                „Колку заработивме оваа недела? Кој е најуспешен?" Одговорено
+                со еден тап од почетниот екран.
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -959,101 +1034,103 @@
     <!-- 4. HOW IT WORKS -->
     <section class="section" id="s3">
       <div class="section-inner">
-        <span class="eyebrow reveal">Како функционира</span>
-        <h1 class="reveal reveal-delay-1">
-          Од „каде си?" до „благодарам, ќе се видиме во 14:30".
-        </h1>
-        <p class="lead reveal reveal-delay-2">
-          Целиот тек на резервирање — три тапа на телефонот, без чекање некој
-          да потврди.
-        </p>
-        <div class="how-it-works">
-          <div class="step-block reveal reveal-delay-2">
-            <div class="step-num">1</div>
-            <div class="step-title">Избери услуга</div>
-            <p class="step-sub">Сите услуги со цена и времетраење, во еден поглед.</p>
-            <div class="phone">
-              <div class="phone-notch"></div>
-              <div class="phone-header">Elite Barbers · Услуги</div>
-              <div class="mock-service active">
-                <div>
-                  <div class="mock-service-name">Класично шишање</div>
-                  <div class="mock-service-meta">30 мин</div>
+        <div class="section-content">
+          <span class="eyebrow reveal">Како функционира</span>
+          <h1 class="reveal reveal-delay-1">
+            Од „каде си?" до „благодарам, ќе се видиме во 14:30".
+          </h1>
+          <p class="lead reveal reveal-delay-2">
+            Целиот тек на резервирање — три тапа на телефонот, без чекање некој
+            да потврди.
+          </p>
+          <div class="how-it-works">
+            <div class="step-block reveal reveal-delay-2">
+              <div class="step-num">1</div>
+              <div class="step-title">Избери услуга</div>
+              <p class="step-sub">Сите услуги со цена и времетраење, во еден поглед.</p>
+              <div class="phone">
+                <div class="phone-notch"></div>
+                <div class="phone-header">Elite Barbers · Услуги</div>
+                <div class="mock-service active">
+                  <div>
+                    <div class="mock-service-name">Класично шишање</div>
+                    <div class="mock-service-meta">30 мин</div>
+                  </div>
+                  <div class="mock-service-price">€12</div>
                 </div>
-                <div class="mock-service-price">€12</div>
-              </div>
-              <div class="mock-service">
-                <div>
-                  <div class="mock-service-name">Hot-Towel Shave</div>
-                  <div class="mock-service-meta">45 мин</div>
+                <div class="mock-service">
+                  <div>
+                    <div class="mock-service-name">Hot-Towel Shave</div>
+                    <div class="mock-service-meta">45 мин</div>
+                  </div>
+                  <div class="mock-service-price">€18</div>
                 </div>
-                <div class="mock-service-price">€18</div>
-              </div>
-              <div class="mock-service">
-                <div>
-                  <div class="mock-service-name">Брада</div>
-                  <div class="mock-service-meta">20 мин</div>
+                <div class="mock-service">
+                  <div>
+                    <div class="mock-service-name">Брада</div>
+                    <div class="mock-service-meta">20 мин</div>
+                  </div>
+                  <div class="mock-service-price">€8</div>
                 </div>
-                <div class="mock-service-price">€8</div>
-              </div>
-              <div class="mock-service">
-                <div>
-                  <div class="mock-service-name">Skin Fade</div>
-                  <div class="mock-service-meta">45 мин</div>
+                <div class="mock-service">
+                  <div>
+                    <div class="mock-service-name">Skin Fade</div>
+                    <div class="mock-service-meta">45 мин</div>
+                  </div>
+                  <div class="mock-service-price">€15</div>
                 </div>
-                <div class="mock-service-price">€15</div>
               </div>
             </div>
-          </div>
 
-          <div class="step-block reveal reveal-delay-3">
-            <div class="step-num">2</div>
-            <div class="step-title">Избери термин</div>
-            <p class="step-sub">
-              Само слободните слотови. Без двојни резервации, без чекање за потврда.
-            </p>
-            <div class="phone">
-              <div class="phone-notch"></div>
-              <div class="phone-header">Среда · 21 мај</div>
-              <div class="mock-date-strip">
-                <div class="mock-date"><div class="mock-date-day">пон</div><div class="mock-date-num">19</div></div>
-                <div class="mock-date"><div class="mock-date-day">вто</div><div class="mock-date-num">20</div></div>
-                <div class="mock-date active"><div class="mock-date-day">сре</div><div class="mock-date-num">21</div></div>
-                <div class="mock-date"><div class="mock-date-day">чет</div><div class="mock-date-num">22</div></div>
-                <div class="mock-date"><div class="mock-date-day">пет</div><div class="mock-date-num">23</div></div>
-              </div>
-              <div class="mock-slot-group">Утро</div>
-              <div class="mock-slots">
-                <div class="mock-slot">09:00</div>
-                <div class="mock-slot">09:30</div>
-                <div class="mock-slot">10:00</div>
-              </div>
-              <div class="mock-slot-group">Попладне</div>
-              <div class="mock-slots">
-                <div class="mock-slot">14:00</div>
-                <div class="mock-slot active">14:30</div>
-                <div class="mock-slot">15:00</div>
+            <div class="step-block reveal reveal-delay-3">
+              <div class="step-num">2</div>
+              <div class="step-title">Избери термин</div>
+              <p class="step-sub">
+                Само слободните слотови. Без двојни резервации, без чекање за потврда.
+              </p>
+              <div class="phone">
+                <div class="phone-notch"></div>
+                <div class="phone-header">Среда · 21 мај</div>
+                <div class="mock-date-strip">
+                  <div class="mock-date"><div class="mock-date-day">пон</div><div class="mock-date-num">19</div></div>
+                  <div class="mock-date"><div class="mock-date-day">вто</div><div class="mock-date-num">20</div></div>
+                  <div class="mock-date active"><div class="mock-date-day">сре</div><div class="mock-date-num">21</div></div>
+                  <div class="mock-date"><div class="mock-date-day">чет</div><div class="mock-date-num">22</div></div>
+                  <div class="mock-date"><div class="mock-date-day">пет</div><div class="mock-date-num">23</div></div>
+                </div>
+                <div class="mock-slot-group">Утро</div>
+                <div class="mock-slots">
+                  <div class="mock-slot">09:00</div>
+                  <div class="mock-slot">09:30</div>
+                  <div class="mock-slot">10:00</div>
+                </div>
+                <div class="mock-slot-group">Попладне</div>
+                <div class="mock-slots">
+                  <div class="mock-slot">14:00</div>
+                  <div class="mock-slot active">14:30</div>
+                  <div class="mock-slot">15:00</div>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div class="step-block reveal reveal-delay-4">
-            <div class="step-num">3</div>
-            <div class="step-title">Резервирано</div>
-            <p class="step-sub">
-              Шест-цифрен код по имејл, потврда веднаш, термин во календарот.
-            </p>
-            <div class="phone">
-              <div class="phone-notch"></div>
-              <div class="phone-header" style="text-align: center;">Готово</div>
-              <div class="mock-confirm-icon">✓</div>
-              <div class="mock-confirm-title">Резервирано!</div>
-              <div class="mock-confirm-body">
-                <strong>Класично шишање</strong>
-                Среда, 21 мај · 14:30<br />
-                со Marko Petrov · 30 мин
+            <div class="step-block reveal reveal-delay-4">
+              <div class="step-num">3</div>
+              <div class="step-title">Резервирано</div>
+              <p class="step-sub">
+                Шест-цифрен код по имејл, потврда веднаш, термин во календарот.
+              </p>
+              <div class="phone">
+                <div class="phone-notch"></div>
+                <div class="phone-header" style="text-align: center;">Готово</div>
+                <div class="mock-confirm-icon">✓</div>
+                <div class="mock-confirm-title">Резервирано!</div>
+                <div class="mock-confirm-body">
+                  <strong>Класично шишање</strong>
+                  Среда, 21 мај · 14:30<br />
+                  со Marko Petrov · 30 мин
+                </div>
+                <div class="mock-confirm-ref">бр. 9a3f-21be</div>
               </div>
-              <div class="mock-confirm-ref">бр. 9a3f-21be</div>
             </div>
           </div>
         </div>
@@ -1062,21 +1139,23 @@
 
     <!-- 5. LIVE DEMO -->
     <section class="section" id="s4">
-      <div class="section-inner demo">
-        <span class="eyebrow reveal">Жива демонстрација</span>
-        <h1 class="reveal reveal-delay-1">Пробај сега.</h1>
-        <p class="lead reveal reveal-delay-2" style="margin: 0 auto;">
-          Реални продукциски податоци. Постави услуга, резервирај термин,
-          означи го клиентот како присутен — гледај како приходот се појавува
-          на таблата.
-        </p>
-        <div class="demo-url reveal reveal-delay-3">
-          web-production-42e42.up.railway.app/elite-barbers
-        </div>
-        <div class="creds reveal reveal-delay-4">
-          <strong>Или најави се како сопственик на местото:</strong><br />
-          имејл&nbsp;&nbsp;<code>admin@elite-barbers.test</code><br />
-          лозинка <code>dev-password-123</code>
+      <div class="section-inner">
+        <div class="section-content demo">
+          <span class="eyebrow reveal">Жива демонстрација</span>
+          <h1 class="reveal reveal-delay-1">Пробај сега.</h1>
+          <p class="lead reveal reveal-delay-2" style="margin: 0 auto;">
+            Реални продукциски податоци. Постави услуга, резервирај термин,
+            означи го клиентот како присутен — гледај како приходот се појавува
+            на таблата.
+          </p>
+          <div class="demo-url reveal reveal-delay-3">
+            web-production-42e42.up.railway.app/elite-barbers
+          </div>
+          <div class="creds reveal reveal-delay-4">
+            <strong>Или најави се како сопственик на местото:</strong><br />
+            имејл&nbsp;&nbsp;<code>admin@elite-barbers.test</code><br />
+            лозинка <code>dev-password-123</code>
+          </div>
         </div>
       </div>
     </section>
@@ -1084,88 +1163,90 @@
     <!-- 6. FEATURES -->
     <section class="section" id="s5">
       <div class="section-inner">
-        <span class="eyebrow reveal">Што е веќе изградено</span>
-        <h1 class="reveal reveal-delay-1">Подготвено за продукција, од прв ден.</h1>
-        <p class="lead reveal reveal-delay-2">
-          Не е прототип — секоја функција подолу работи во живата апликација
-          токму сега.
-        </p>
-        <div class="features-grid">
-          <div class="feature-mock reveal reveal-delay-2">
-            <div class="browser-chrome">
-              <span class="browser-dot"></span>
-              <span class="browser-dot"></span>
-              <span class="browser-dot"></span>
-            </div>
-            <div class="mock-today-time">14:22</div>
-            <div class="mock-today-day">среда, 21 мај</div>
-            <div class="mock-nextup-card">
-              <div class="mock-nextup-label">Следно · за 8 мин</div>
-              <div class="mock-nextup-customer">
-                <div class="mock-avatar">БС</div>
-                <div>
-                  <div class="mock-nextup-name">Бојан Стојановски</div>
-                  <div class="mock-nextup-svc">Класично шишање · Marko Petrov</div>
-                  <div class="mock-nextup-when">14:30 – 15:00 · 30 мин</div>
+        <div class="section-content">
+          <span class="eyebrow reveal">Што е веќе изградено</span>
+          <h1 class="reveal reveal-delay-1">Подготвено за продукција, од прв ден.</h1>
+          <p class="lead reveal reveal-delay-2">
+            Не е прототип — секоја функција подолу работи во живата апликација
+            токму сега.
+          </p>
+          <div class="features-grid">
+            <div class="feature-mock reveal reveal-delay-2">
+              <div class="browser-chrome">
+                <span class="browser-dot"></span>
+                <span class="browser-dot"></span>
+                <span class="browser-dot"></span>
+              </div>
+              <div class="mock-today-time">14:22</div>
+              <div class="mock-today-day">среда, 21 мај</div>
+              <div class="mock-nextup-card">
+                <div class="mock-nextup-label">Следно · за 8 мин</div>
+                <div class="mock-nextup-customer">
+                  <div class="mock-avatar">БС</div>
+                  <div>
+                    <div class="mock-nextup-name">Бојан Стојановски</div>
+                    <div class="mock-nextup-svc">Класично шишање · Marko Petrov</div>
+                    <div class="mock-nextup-when">14:30 – 15:00 · 30 мин</div>
+                  </div>
+                </div>
+                <div class="mock-nextup-actions">
+                  <span class="mock-btn mock-btn-primary">✓ Присутен</span>
+                  <span class="mock-btn mock-btn-ghost">✗ Не дојде</span>
                 </div>
               </div>
-              <div class="mock-nextup-actions">
-                <span class="mock-btn mock-btn-primary">✓ Присутен</span>
-                <span class="mock-btn mock-btn-ghost">✗ Не дојде</span>
-              </div>
+              <h3 style="margin-top: 0.85rem; font-size: 0.95rem;">Денешен распоред на еден екран</h3>
+              <p style="margin: 0.25rem 0 0; color: var(--muted-fg); font-size: 0.85rem; line-height: 1.45;">
+                Жив часовник, претстоен клиент, еден тап за „присутен" или
+                „завршено" — приходот веднаш паѓа во таблата за заработка.
+              </p>
             </div>
-            <h3 style="margin-top: 0.85rem; font-size: 0.95rem;">Денешен распоред на еден екран</h3>
-            <p style="margin: 0.25rem 0 0; color: var(--muted-fg); font-size: 0.85rem; line-height: 1.45;">
-              Жив часовник, претстоен клиент, еден тап за „присутен" или
-              „завршено" — приходот веднаш паѓа во таблата за заработка.
-            </p>
-          </div>
 
-          <div class="feature-mock reveal reveal-delay-3">
-            <div class="browser-chrome">
-              <span class="browser-dot"></span>
-              <span class="browser-dot"></span>
-              <span class="browser-dot"></span>
-            </div>
-            <div class="mock-kpi-grid">
-              <div class="mock-kpi">
-                <div class="mock-kpi-label">Заработено</div>
-                <div class="mock-kpi-value earned">€847</div>
-                <div class="mock-kpi-sub">42 завршени</div>
+            <div class="feature-mock reveal reveal-delay-3">
+              <div class="browser-chrome">
+                <span class="browser-dot"></span>
+                <span class="browser-dot"></span>
+                <span class="browser-dot"></span>
               </div>
-              <div class="mock-kpi">
-                <div class="mock-kpi-label">Очекувано</div>
-                <div class="mock-kpi-value projected">€1,240</div>
-                <div class="mock-kpi-sub">58 претстојни</div>
+              <div class="mock-kpi-grid">
+                <div class="mock-kpi">
+                  <div class="mock-kpi-label">Заработено</div>
+                  <div class="mock-kpi-value earned">€847</div>
+                  <div class="mock-kpi-sub">42 завршени</div>
+                </div>
+                <div class="mock-kpi">
+                  <div class="mock-kpi-label">Очекувано</div>
+                  <div class="mock-kpi-value projected">€1,240</div>
+                  <div class="mock-kpi-sub">58 претстојни</div>
+                </div>
+                <div class="mock-kpi">
+                  <div class="mock-kpi-label">Изгубено</div>
+                  <div class="mock-kpi-value lost">€124</div>
+                  <div class="mock-kpi-sub">8 откажани</div>
+                </div>
               </div>
-              <div class="mock-kpi">
-                <div class="mock-kpi-label">Изгубено</div>
-                <div class="mock-kpi-value lost">€124</div>
-                <div class="mock-kpi-sub">8 откажани</div>
+              <div class="mock-chart-label">Дневен приход — 14 дена</div>
+              <div class="mock-chart">
+                <div class="mock-bar" style="height: 30%;"><div class="mock-bar-earned" style="height: 100%;"></div></div>
+                <div class="mock-bar" style="height: 55%;"><div class="mock-bar-earned" style="height: 80%;"></div></div>
+                <div class="mock-bar" style="height: 40%;"><div class="mock-bar-earned" style="height: 100%;"></div></div>
+                <div class="mock-bar" style="height: 65%;"><div class="mock-bar-earned" style="height: 100%;"></div></div>
+                <div class="mock-bar" style="height: 80%;"><div class="mock-bar-earned" style="height: 75%;"></div></div>
+                <div class="mock-bar" style="height: 60%;"><div class="mock-bar-earned" style="height: 90%;"></div></div>
+                <div class="mock-bar" style="height: 45%;"><div class="mock-bar-earned" style="height: 100%;"></div></div>
+                <div class="mock-bar" style="height: 70%;"><div class="mock-bar-earned" style="height: 65%;"></div></div>
+                <div class="mock-bar" style="height: 85%;"><div class="mock-bar-projected" style="height: 100%;"></div></div>
+                <div class="mock-bar" style="height: 55%;"><div class="mock-bar-projected" style="height: 100%;"></div></div>
+                <div class="mock-bar" style="height: 70%;"><div class="mock-bar-projected" style="height: 100%;"></div></div>
+                <div class="mock-bar" style="height: 90%;"><div class="mock-bar-projected" style="height: 100%;"></div></div>
+                <div class="mock-bar" style="height: 75%;"><div class="mock-bar-projected" style="height: 100%;"></div></div>
+                <div class="mock-bar" style="height: 60%;"><div class="mock-bar-projected" style="height: 100%;"></div></div>
               </div>
+              <h3 style="margin-top: 0.85rem; font-size: 0.95rem;">Заработка на еден поглед</h3>
+              <p style="margin: 0.25rem 0 0; color: var(--muted-fg); font-size: 0.85rem; line-height: 1.45;">
+                Завршено наспроти очекувано наспроти изгубено. Топ услуги, топ
+                членови. Дневен графикон.
+              </p>
             </div>
-            <div class="mock-chart-label">Дневен приход — 14 дена</div>
-            <div class="mock-chart">
-              <div class="mock-bar" style="height: 30%;"><div class="mock-bar-earned" style="height: 100%;"></div></div>
-              <div class="mock-bar" style="height: 55%;"><div class="mock-bar-earned" style="height: 80%;"></div></div>
-              <div class="mock-bar" style="height: 40%;"><div class="mock-bar-earned" style="height: 100%;"></div></div>
-              <div class="mock-bar" style="height: 65%;"><div class="mock-bar-earned" style="height: 100%;"></div></div>
-              <div class="mock-bar" style="height: 80%;"><div class="mock-bar-earned" style="height: 75%;"></div></div>
-              <div class="mock-bar" style="height: 60%;"><div class="mock-bar-earned" style="height: 90%;"></div></div>
-              <div class="mock-bar" style="height: 45%;"><div class="mock-bar-earned" style="height: 100%;"></div></div>
-              <div class="mock-bar" style="height: 70%;"><div class="mock-bar-earned" style="height: 65%;"></div></div>
-              <div class="mock-bar" style="height: 85%;"><div class="mock-bar-projected" style="height: 100%;"></div></div>
-              <div class="mock-bar" style="height: 55%;"><div class="mock-bar-projected" style="height: 100%;"></div></div>
-              <div class="mock-bar" style="height: 70%;"><div class="mock-bar-projected" style="height: 100%;"></div></div>
-              <div class="mock-bar" style="height: 90%;"><div class="mock-bar-projected" style="height: 100%;"></div></div>
-              <div class="mock-bar" style="height: 75%;"><div class="mock-bar-projected" style="height: 100%;"></div></div>
-              <div class="mock-bar" style="height: 60%;"><div class="mock-bar-projected" style="height: 100%;"></div></div>
-            </div>
-            <h3 style="margin-top: 0.85rem; font-size: 0.95rem;">Заработка на еден поглед</h3>
-            <p style="margin: 0.25rem 0 0; color: var(--muted-fg); font-size: 0.85rem; line-height: 1.45;">
-              Завршено наспроти очекувано наспроти изгубено. Топ услуги, топ
-              членови. Дневен графикон.
-            </p>
           </div>
         </div>
       </div>
@@ -1174,51 +1255,53 @@
     <!-- 7. PRICING -->
     <section class="section" id="s6">
       <div class="section-inner">
-        <span class="eyebrow reveal">Бизнис модел</span>
-        <h1 class="reveal reveal-delay-1">Претплата по место.</h1>
-        <p class="lead reveal reveal-delay-2">
-          Бесплатно за почеток. Плаќаш кога ќе ти треба повеќе. Никаков
-          процент по резервација — местото задржува 100% од она што го плаќа
-          клиентот.
-        </p>
-        <div class="pricing">
-          <div class="tier reveal reveal-delay-2">
-            <div class="tier-name">Старт</div>
-            <div class="tier-price">€0<small> / месечно</small></div>
-            <div class="tier-sub">Започни бесплатно</div>
-            <ul>
-              <li>1 член на тимот</li>
-              <li>До 30 резервации / месечно</li>
-              <li>Брендирана страница</li>
-              <li>Верификација преку имејл</li>
-              <li>Поддршка во заедницата</li>
-            </ul>
-          </div>
-          <div class="tier tier-featured reveal reveal-delay-3">
-            <span class="tier-badge">Најпопуларно</span>
-            <div class="tier-name" style="color: hsl(0 0% 100% / 0.85);">Pro</div>
-            <div class="tier-price">€19<small> / месечно</small></div>
-            <div class="tier-sub">За места со 2-5 столчиња</div>
-            <ul>
-              <li>Неограничен тим</li>
-              <li>Неограничени резервации</li>
-              <li>Целосна табла за заработка</li>
-              <li>Брендирање (лого + бои)</li>
-              <li>Имејл + SMS известувања</li>
-              <li>Приоритетна поддршка</li>
-            </ul>
-          </div>
-          <div class="tier reveal reveal-delay-4">
-            <div class="tier-name">Студио</div>
-            <div class="tier-price">€49<small> / месечно</small></div>
-            <div class="tier-sub">За салони со повеќе локации</div>
-            <ul>
-              <li>Сè од Pro</li>
-              <li>Поддршка за повеќе локации</li>
-              <li>Напредна аналитика + извоз</li>
-              <li>API за интеграции</li>
-              <li>Личен онбординг</li>
-            </ul>
+        <div class="section-content">
+          <span class="eyebrow reveal">Бизнис модел</span>
+          <h1 class="reveal reveal-delay-1">Претплата по место.</h1>
+          <p class="lead reveal reveal-delay-2">
+            Бесплатно за почеток. Плаќаш кога ќе ти треба повеќе. Никаков
+            процент по резервација — местото задржува 100% од она што го плаќа
+            клиентот.
+          </p>
+          <div class="pricing">
+            <div class="tier reveal reveal-delay-2">
+              <div class="tier-name">Старт</div>
+              <div class="tier-price">€0<small> / месечно</small></div>
+              <div class="tier-sub">Започни бесплатно</div>
+              <ul>
+                <li>1 член на тимот</li>
+                <li>До 30 резервации / месечно</li>
+                <li>Брендирана страница</li>
+                <li>Верификација преку имејл</li>
+                <li>Поддршка во заедницата</li>
+              </ul>
+            </div>
+            <div class="tier tier-featured reveal reveal-delay-3">
+              <span class="tier-badge">Најпопуларно</span>
+              <div class="tier-name" style="color: hsl(0 0% 100% / 0.85);">Pro</div>
+              <div class="tier-price">€19<small> / месечно</small></div>
+              <div class="tier-sub">За места со 2-5 столчиња</div>
+              <ul>
+                <li>Неограничен тим</li>
+                <li>Неограничени резервации</li>
+                <li>Целосна табла за заработка</li>
+                <li>Брендирање (лого + бои)</li>
+                <li>Имејл + SMS известувања</li>
+                <li>Приоритетна поддршка</li>
+              </ul>
+            </div>
+            <div class="tier reveal reveal-delay-4">
+              <div class="tier-name">Студио</div>
+              <div class="tier-price">€49<small> / месечно</small></div>
+              <div class="tier-sub">За салони со повеќе локации</div>
+              <ul>
+                <li>Сè од Pro</li>
+                <li>Поддршка за повеќе локации</li>
+                <li>Напредна аналитика + извоз</li>
+                <li>API за интеграции</li>
+                <li>Личен онбординг</li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>
@@ -1227,42 +1310,44 @@
     <!-- 8. ROADMAP -->
     <section class="section" id="s7">
       <div class="section-inner">
-        <span class="eyebrow reveal">Што следи</span>
-        <h1 class="reveal reveal-delay-1">План.</h1>
-        <p class="lead reveal reveal-delay-2">
-          Не е готово. Еве каде одиме од хакатонот до вистински производ.
-        </p>
-        <div class="roadmap">
-          <div class="roadmap-col reveal reveal-delay-2">
-            <h3><span class="dot"></span>Веќе испорачано</h3>
-            <ul>
-              <li>Multi-tenant страница</li>
-              <li>Движок за резервации во реално време</li>
-              <li>Верификација преку имејл + OTP</li>
-              <li>Табла за заработка</li>
-              <li>Брендирање по место</li>
-              <li>EN + MK локализација</li>
-            </ul>
-          </div>
-          <div class="roadmap-col reveal reveal-delay-3">
-            <h3><span class="dot next"></span>Следните 30 дена</h3>
-            <ul>
-              <li>SMS потсетници 24ч однапред</li>
-              <li>Stripe / интеграција за плаќање</li>
-              <li>Оценки и осврти од клиенти</li>
-              <li>Извоз во календар (.ics)</li>
-              <li>„Заборавена лозинка" тек</li>
-            </ul>
-          </div>
-          <div class="roadmap-col reveal reveal-delay-4">
-            <h3><span class="dot future"></span>Иднина</h3>
-            <ul>
-              <li>Програма за лојалност</li>
-              <li>Walk-in редица</li>
-              <li>Маркетинг кампањи</li>
-              <li>Native iOS + Android апликации</li>
-              <li>Инвентар / малопродажба</li>
-            </ul>
+        <div class="section-content">
+          <span class="eyebrow reveal">Што следи</span>
+          <h1 class="reveal reveal-delay-1">План.</h1>
+          <p class="lead reveal reveal-delay-2">
+            Не е готово. Еве каде одиме од хакатонот до вистински производ.
+          </p>
+          <div class="roadmap">
+            <div class="roadmap-col reveal reveal-delay-2">
+              <h3><span class="dot"></span>Веќе испорачано</h3>
+              <ul>
+                <li>Multi-tenant страница</li>
+                <li>Движок за резервации во реално време</li>
+                <li>Верификација преку имејл + OTP</li>
+                <li>Табла за заработка</li>
+                <li>Брендирање по место</li>
+                <li>EN + MK локализација</li>
+              </ul>
+            </div>
+            <div class="roadmap-col reveal reveal-delay-3">
+              <h3><span class="dot next"></span>Следните 30 дена</h3>
+              <ul>
+                <li>SMS потсетници 24ч однапред</li>
+                <li>Stripe / интеграција за плаќање</li>
+                <li>Оценки и осврти од клиенти</li>
+                <li>Извоз во календар (.ics)</li>
+                <li>„Заборавена лозинка" тек</li>
+              </ul>
+            </div>
+            <div class="roadmap-col reveal reveal-delay-4">
+              <h3><span class="dot future"></span>Иднина</h3>
+              <ul>
+                <li>Програма за лојалност</li>
+                <li>Walk-in редица</li>
+                <li>Маркетинг кампањи</li>
+                <li>Native iOS + Android апликации</li>
+                <li>Инвентар / малопродажба</li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>
@@ -1270,90 +1355,121 @@
 
     <!-- 9. CLOSING -->
     <section class="section section-closing" id="s8">
-      <div class="orb" style="top: -50px; left: 20%; height: 320px; width: 320px; background: hsl(340 82% 56%);"></div>
-      <div class="orb" style="bottom: 10%; right: 5%; height: 260px; width: 260px; background: hsl(20 90% 65%);"></div>
-      <div class="section-inner closing">
-        <div class="closing-glyph reveal">б</div>
-        <div class="thank-you reveal reveal-delay-1">
-          <span class="thank-you-mk">Благодариме.</span>
-        </div>
-        <p class="lead reveal reveal-delay-2" style="margin: 1rem auto 0;">
-          Прашања? Имаме одговори. (А ако немаме — ќе ги испорачаме во
-          следниот спринт.)
-        </p>
-        <div class="closing-links reveal reveal-delay-3">
-          <a href="https://web-production-42e42.up.railway.app">
-            web-production-42e42.up.railway.app
-          </a>
-          <a href="https://web-production-42e42.up.railway.app/elite-barbers">
-            /elite-barbers (демо)
-          </a>
+      <div class="section-inner">
+        <div class="orb parallax-up" style="top: -50px; left: 20%; height: 320px; width: 320px; background: hsl(340 82% 56%);"></div>
+        <div class="orb parallax-up" style="bottom: 10%; right: 5%; height: 260px; width: 260px; background: hsl(20 90% 65%);"></div>
+        <div class="section-content closing">
+          <div class="closing-glyph reveal">б</div>
+          <div class="thank-you reveal reveal-delay-1">
+            <span class="thank-you-mk">Благодариме.</span>
+          </div>
+          <p class="lead reveal reveal-delay-2" style="margin: 1rem auto 0;">
+            Прашања? Имаме одговори. (А ако немаме — ќе ги испорачаме во
+            следниот спринт.)
+          </p>
+          <div class="closing-links reveal reveal-delay-3">
+            <a href="https://web-production-42e42.up.railway.app">
+              web-production-42e42.up.railway.app
+            </a>
+            <a href="https://web-production-42e42.up.railway.app/elite-barbers">
+              /elite-barbers (демо)
+            </a>
+          </div>
         </div>
       </div>
     </section>
 
     <script>
       // ============================================================
-      // Reveal-on-scroll + active rail dot tracking.
-      // Pure IntersectionObserver — no animation library.
+      // 1) Progress bar — scale the top gradient bar as user scrolls.
+      // 2) Active rail-dot tracking — light up the dot of whichever
+      //    section is currently dominant in the viewport.
+      // 3) IntersectionObserver fallback for browsers without
+      //    animation-timeline: view() — flips a class so the CSS
+      //    transition variant kicks in.
+      // 4) Keyboard nav: smooth-scroll one section at a time.
+      // 5) Hide the "скролај полека" hint after first scroll.
       // ============================================================
       const sections = document.querySelectorAll(".section");
       const dots = document.querySelectorAll(".rail-dot");
+      const progressFill = document.getElementById("progress-fill");
       const scrollHint = document.getElementById("scroll-hint");
+      const supportsScrollTimeline =
+        CSS.supports && CSS.supports("animation-timeline: view()");
 
-      // Reveal observer — triggers entry animations as content enters.
-      const revealObs = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((e) => {
-            if (e.isIntersecting) {
-              e.target.classList.add("in");
-              // Don't unobserve — let reveals replay if user scrolls back up.
-            } else {
-              // Only un-reveal if it's well off screen, to avoid jank when
-              // a section is partially visible at the edge.
-              const rect = e.boundingClientRect;
-              if (rect.top > window.innerHeight || rect.bottom < 0) {
-                e.target.classList.remove("in");
-              }
-            }
+      // Reveal fallback for browsers without scroll-driven animations.
+      if (!supportsScrollTimeline) {
+        const revealObs = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((e) => {
+              if (e.isIntersecting) e.target.classList.add("reveal-in");
+            });
+          },
+          { threshold: 0.15, rootMargin: "0px 0px -10% 0px" },
+        );
+        document.querySelectorAll(".reveal").forEach((el) => revealObs.observe(el));
+      }
+
+      // Active section tracking — the section whose middle is closest
+      // to the centre of the viewport wins.
+      function updateActive() {
+        const mid = window.scrollY + window.innerHeight / 2;
+        let bestIdx = 0;
+        let bestDist = Infinity;
+        sections.forEach((sec, i) => {
+          const rect = sec.getBoundingClientRect();
+          const top = rect.top + window.scrollY;
+          const center = top + rect.height / 2;
+          const d = Math.abs(center - mid);
+          if (d < bestDist) {
+            bestDist = d;
+            bestIdx = i;
+          }
+        });
+        dots.forEach((d, i) => d.classList.toggle("active", i === bestIdx));
+      }
+
+      // Progress bar — fraction of total page scrolled.
+      function updateProgress() {
+        const max = document.documentElement.scrollHeight - window.innerHeight;
+        const p = max <= 0 ? 0 : window.scrollY / max;
+        progressFill.style.transform = `scaleX(${p})`;
+      }
+
+      let ticking = false;
+      function onScroll() {
+        if (!ticking) {
+          requestAnimationFrame(() => {
+            updateActive();
+            updateProgress();
+            ticking = false;
           });
-        },
-        { threshold: 0.15 },
-      );
-      document.querySelectorAll(".reveal").forEach((el) => revealObs.observe(el));
+          ticking = true;
+        }
+      }
+      window.addEventListener("scroll", onScroll, { passive: true });
 
-      // Active section tracker — highlight the right dot as user scrolls.
-      const sectionObs = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((e) => {
-            if (e.isIntersecting) {
-              const idx = Array.from(sections).indexOf(e.target);
-              dots.forEach((d, i) => d.classList.toggle("active", i === idx));
-            }
-          });
-        },
-        { threshold: 0.5 },
-      );
-      sections.forEach((s) => sectionObs.observe(s));
-
-      // Click rail dots → smooth scroll.
+      // Rail-dot clicks → smooth scroll to that section.
       dots.forEach((d, i) => {
         d.addEventListener("click", () => {
           sections[i].scrollIntoView({ behavior: "smooth", block: "start" });
         });
       });
 
-      // Keyboard: arrows + space + page-up/down advance one section.
+      // Keyboard: jump one section at a time.
       function goRel(delta) {
         const active = Array.from(dots).findIndex((d) => d.classList.contains("active"));
         const next = Math.max(0, Math.min(sections.length - 1, active + delta));
         sections[next].scrollIntoView({ behavior: "smooth", block: "start" });
       }
       document.addEventListener("keydown", (e) => {
-        if (["ArrowDown", "PageDown", " "].includes(e.key)) {
+        if (["PageDown", " "].includes(e.key)) {
           goRel(1); e.preventDefault();
-        } else if (["ArrowUp", "PageUp"].includes(e.key)) {
+        } else if (e.key === "PageUp") {
           goRel(-1); e.preventDefault();
+        } else if (e.key === "ArrowDown") {
+          // Let natural scroll handle short arrows; tap goRel only on big jumps.
+          // (No preventDefault — preserve smooth wheel-style scroll.)
         } else if (e.key === "Home") {
           sections[0].scrollIntoView({ behavior: "smooth" });
         } else if (e.key === "End") {
@@ -1364,18 +1480,22 @@
         }
       });
 
-      // Hide the "scroll" hint after the user has moved past the first section.
+      // Hide the scroll hint once user is well past the hero.
       let hintHidden = false;
       window.addEventListener(
         "scroll",
         () => {
-          if (!hintHidden && window.scrollY > window.innerHeight * 0.5) {
+          if (!hintHidden && window.scrollY > window.innerHeight * 0.6) {
             scrollHint.classList.add("hidden");
             hintHidden = true;
           }
         },
         { passive: true },
       );
+
+      // Prime initial state.
+      updateActive();
+      updateProgress();
     </script>
   </body>
 </html>
