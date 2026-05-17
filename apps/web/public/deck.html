@@ -1,12 +1,12 @@
 <!doctype html>
-<html lang="en">
+<html lang="mk">
   <head>
     <meta charset="utf-8" />
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
-    <title>Berberica — Pitch</title>
+    <title>Berberica — Презентација</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -15,9 +15,9 @@
     />
     <style>
       /* ============================================================
-       * Berberica pitch deck — single-file slides.
-       * Same design tokens as the app: brand pink, Inter, generous
-       * radii, Cyrillic-aware. Standalone — no JS framework.
+       * Berberica pitch deck (Macedonian).
+       * Single-file, no framework. Same brand language as the app:
+       * Inter, brand magenta, Cyrillic-aware, generous radii.
        * ============================================================ */
       :root {
         --bg: hsl(0 0% 100%);
@@ -31,48 +31,35 @@
         --border: hsl(240 6% 90%);
         --radius: 1.25rem;
         --shadow-lg: 0 24px 80px -24px hsl(340 82% 36% / 0.18);
+        --shadow-md: 0 12px 28px -8px hsl(240 10% 12% / 0.1);
       }
 
-      * {
-        box-sizing: border-box;
-      }
-      html,
-      body {
+      * { box-sizing: border-box; }
+      html, body {
         margin: 0;
         padding: 0;
         height: 100%;
         overflow: hidden;
         background: #faf7f9;
         font-family:
-          "Inter",
-          -apple-system,
-          BlinkMacSystemFont,
-          "Segoe UI",
-          system-ui,
-          sans-serif;
+          "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+          system-ui, sans-serif;
         color: var(--fg);
         -webkit-font-smoothing: antialiased;
         font-feature-settings: "ss01" 1, "calt" 1;
       }
 
-      .deck {
-        position: relative;
-        height: 100vh;
-        width: 100vw;
-        overflow: hidden;
-      }
+      .deck { position: relative; height: 100vh; width: 100vw; overflow: hidden; }
 
       .slide {
         position: absolute;
         inset: 0;
         display: grid;
         place-items: center;
-        padding: 4rem 6rem;
+        padding: 3rem 4.5rem;
         opacity: 0;
         transform: translateX(40px);
-        transition:
-          opacity 320ms ease,
-          transform 320ms ease;
+        transition: opacity 320ms ease, transform 320ms ease;
         pointer-events: none;
       }
       .slide.active {
@@ -80,12 +67,9 @@
         transform: translateX(0);
         pointer-events: auto;
       }
-      .slide-inner {
-        max-width: 1100px;
-        width: 100%;
-      }
+      .slide-inner { max-width: 1180px; width: 100%; }
 
-      /* ---- Brand mark in the corner of every slide ---- */
+      /* ---- Corner mark ---- */
       .mark {
         position: absolute;
         top: 1.75rem;
@@ -100,8 +84,7 @@
         text-decoration: none;
       }
       .mark-glyph {
-        height: 36px;
-        width: 36px;
+        height: 36px; width: 36px;
         border-radius: 12px;
         background: var(--primary);
         color: #fff;
@@ -113,7 +96,6 @@
         padding-top: 1px;
       }
 
-      /* ---- Page counter ---- */
       .counter {
         position: absolute;
         bottom: 1.5rem;
@@ -125,7 +107,6 @@
         z-index: 10;
         font-variant-numeric: tabular-nums;
       }
-
       .hint {
         position: absolute;
         bottom: 1.5rem;
@@ -145,7 +126,7 @@
         margin: 0 2px;
       }
 
-      /* ---- Reusable typography ---- */
+      /* ---- Typography ---- */
       .eyebrow {
         display: inline-block;
         font-size: 0.7rem;
@@ -159,92 +140,69 @@
         margin-bottom: 1.5rem;
       }
       h1 {
-        font-size: clamp(2.5rem, 5.5vw, 4.75rem);
+        font-size: clamp(2.2rem, 5vw, 4.25rem);
         line-height: 1.05;
         font-weight: 800;
         letter-spacing: -0.02em;
         margin: 0 0 1.25rem;
       }
       h2 {
-        font-size: clamp(1.75rem, 3.2vw, 2.75rem);
+        font-size: clamp(1.5rem, 3vw, 2.5rem);
         line-height: 1.15;
         font-weight: 700;
         letter-spacing: -0.015em;
-        margin: 0 0 1.25rem;
+        margin: 0 0 1rem;
       }
-      h3 {
-        font-size: 1.25rem;
-        font-weight: 700;
-        margin: 0 0 0.5rem;
-      }
+      h3 { font-size: 1.125rem; font-weight: 700; margin: 0 0 0.45rem; }
       .lead {
-        font-size: clamp(1.1rem, 1.5vw, 1.4rem);
+        font-size: clamp(1.05rem, 1.45vw, 1.3rem);
         line-height: 1.5;
         color: var(--muted-fg);
-        max-width: 60ch;
+        max-width: 62ch;
       }
 
-      /* ---- Slide 1: HERO ---- */
+      /* ---- Slide 1 (HERO) ---- */
       .slide-hero {
         background:
-          radial-gradient(
-            ellipse at top right,
-            hsl(340 82% 56% / 0.14) 0%,
-            transparent 55%
-          ),
-          radial-gradient(
-            ellipse at bottom left,
-            hsl(340 82% 56% / 0.07) 0%,
-            transparent 60%
-          ),
+          radial-gradient(ellipse at top right, hsl(340 82% 56% / 0.14) 0%, transparent 55%),
+          radial-gradient(ellipse at bottom left, hsl(340 82% 56% / 0.07) 0%, transparent 60%),
           #faf7f9;
       }
-      .hero-content {
-        text-align: center;
-      }
+      .hero-content { text-align: center; }
       .hero-glyph {
-        height: 92px;
-        width: 92px;
+        height: 92px; width: 92px;
         margin: 0 auto 2rem;
         border-radius: 26px;
         background: var(--primary);
         color: #fff;
-        display: grid;
-        place-items: center;
-        font-size: 56px;
-        font-weight: 700;
-        line-height: 1;
-        padding-top: 2px;
+        display: grid; place-items: center;
+        font-size: 56px; font-weight: 700; line-height: 1; padding-top: 2px;
         box-shadow: var(--shadow-lg);
       }
       .hero-meta {
         margin-top: 2.5rem;
-        display: flex;
-        gap: 2.5rem;
-        justify-content: center;
-        font-size: 0.95rem;
-        color: var(--muted-fg);
+        display: flex; gap: 2.25rem; justify-content: center;
+        font-size: 0.9rem; color: var(--muted-fg);
+        flex-wrap: wrap;
       }
-      .hero-meta strong {
-        color: var(--fg);
-      }
+      .hero-meta strong { color: var(--fg); }
 
-      /* ---- Slide 2: PROBLEM ---- */
+      /* ---- Slide 2 (PROBLEM) ---- */
       .problem-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         gap: 1.25rem;
-        margin-top: 2.25rem;
+        margin-top: 2rem;
       }
       .problem-card {
         background: #fff;
         border: 1px solid var(--border);
         border-radius: var(--radius);
-        padding: 1.75rem;
+        padding: 1.6rem;
         box-shadow: 0 1px 3px hsl(240 10% 12% / 0.04);
       }
       .problem-stat {
-        font-size: 3rem;
+        font-size: 2.75rem;
         font-weight: 800;
         color: var(--primary);
         line-height: 1;
@@ -252,78 +210,232 @@
         margin-bottom: 0.75rem;
         font-variant-numeric: tabular-nums;
       }
-      .problem-card p {
-        margin: 0;
-        color: var(--muted-fg);
-        line-height: 1.5;
-      }
+      .problem-card p { margin: 0; color: var(--muted-fg); line-height: 1.5; font-size: 0.95rem; }
 
-      /* ---- Slide 3: SOLUTION ---- */
+      /* ---- Slide 3 (SOLUTION) ---- */
       .solution-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         gap: 1.25rem;
-        margin-top: 2rem;
+        margin-top: 1.75rem;
       }
       .solution-card {
-        background: linear-gradient(
-          155deg,
-          hsl(340 82% 56% / 0.06),
-          #fff 60%
-        );
+        background: linear-gradient(155deg, hsl(340 82% 56% / 0.06), #fff 60%);
         border: 1px solid var(--border);
         border-radius: var(--radius);
-        padding: 1.75rem;
+        padding: 1.6rem;
       }
       .solution-icon {
-        height: 44px;
-        width: 44px;
+        height: 42px; width: 42px;
         border-radius: 12px;
         background: var(--primary-soft);
         color: var(--primary);
-        display: grid;
-        place-items: center;
-        font-size: 1.4rem;
-        margin-bottom: 1rem;
+        display: grid; place-items: center;
+        font-size: 1.35rem;
+        margin-bottom: 0.9rem;
       }
-      .solution-card p {
-        margin: 0;
+      .solution-card p { margin: 0; color: var(--muted-fg); line-height: 1.55; font-size: 0.95rem; }
+
+      /* ---- Slide 4 (HOW IT WORKS) — phone mockups ---- */
+      .how-it-works {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2rem;
+        margin-top: 1.5rem;
+        align-items: start;
+      }
+      .step-block { text-align: center; }
+      .step-num {
+        display: inline-block;
+        width: 28px; height: 28px;
+        line-height: 28px;
+        border-radius: 50%;
+        background: var(--primary);
+        color: #fff;
+        font-weight: 700;
+        font-size: 0.85rem;
+        margin-bottom: 0.65rem;
+      }
+      .step-title {
+        font-weight: 600;
+        font-size: 1.05rem;
+        margin-bottom: 0.4rem;
+      }
+      .step-sub {
+        font-size: 0.85rem;
         color: var(--muted-fg);
-        line-height: 1.55;
+        margin: 0 auto 1.25rem;
+        max-width: 28ch;
+        line-height: 1.4;
       }
 
-      /* ---- Slide 4: DEMO ---- */
-      .demo {
-        text-align: center;
+      /* Phone frame */
+      .phone {
+        width: 100%;
+        max-width: 240px;
+        margin: 0 auto;
+        background: #fff;
+        border: 8px solid #1a1a1f;
+        border-radius: 32px;
+        padding: 14px 10px 12px;
+        box-shadow: var(--shadow-md);
+        text-align: left;
       }
+      .phone-notch {
+        width: 60%;
+        height: 6px;
+        background: #1a1a1f;
+        border-radius: 0 0 8px 8px;
+        margin: -14px auto 12px;
+      }
+      .phone-header {
+        font-size: 0.6rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted-fg);
+        font-weight: 600;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 10px;
+      }
+
+      /* Service card mockup */
+      .mock-service {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 9px 10px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        margin-bottom: 6px;
+        font-size: 0.7rem;
+      }
+      .mock-service.active { border-color: var(--primary); background: var(--primary-soft); }
+      .mock-service-name { font-weight: 600; font-size: 0.75rem; }
+      .mock-service-meta { color: var(--muted-fg); font-size: 0.65rem; margin-top: 1px; }
+      .mock-service-price {
+        font-weight: 700;
+        font-size: 0.78rem;
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* Slot picker mockup */
+      .mock-date-strip {
+        display: flex;
+        gap: 4px;
+        overflow: hidden;
+        margin-bottom: 12px;
+      }
+      .mock-date {
+        flex: 1;
+        text-align: center;
+        padding: 6px 0;
+        border-radius: 8px;
+        background: #fff;
+        border: 1px solid var(--border);
+        font-size: 0.6rem;
+        font-weight: 600;
+      }
+      .mock-date.active {
+        background: var(--primary);
+        color: #fff;
+        border-color: var(--primary);
+      }
+      .mock-date-day {
+        font-size: 0.55rem;
+        text-transform: uppercase;
+        opacity: 0.7;
+      }
+      .mock-date-num { font-size: 0.85rem; font-weight: 700; }
+      .mock-slot-group {
+        font-size: 0.55rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted-fg);
+        margin: 6px 0 4px;
+      }
+      .mock-slots {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 4px;
+      }
+      .mock-slot {
+        text-align: center;
+        padding: 6px 0;
+        border-radius: 8px;
+        background: #fff;
+        border: 1px solid var(--border);
+        font-size: 0.7rem;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+      }
+      .mock-slot.active {
+        background: var(--primary);
+        color: #fff;
+        border-color: var(--primary);
+      }
+
+      /* Confirmation mockup */
+      .mock-confirm-icon {
+        height: 44px; width: 44px;
+        margin: 12px auto;
+        border-radius: 50%;
+        background: hsl(152 60% 40% / 0.15);
+        color: var(--success);
+        display: grid; place-items: center;
+        font-size: 22px;
+        font-weight: 800;
+      }
+      .mock-confirm-title {
+        text-align: center;
+        font-weight: 700;
+        font-size: 1rem;
+        margin-bottom: 8px;
+      }
+      .mock-confirm-body {
+        background: var(--primary-soft);
+        border-radius: 10px;
+        padding: 10px;
+        font-size: 0.7rem;
+        line-height: 1.5;
+        margin: 8px 4px;
+      }
+      .mock-confirm-body strong { display: block; margin-bottom: 4px; }
+      .mock-confirm-ref {
+        text-align: center;
+        font-size: 0.55rem;
+        font-family: monospace;
+        color: var(--muted-fg);
+        margin: 6px 0 2px;
+      }
+
+      /* ---- Slide 5 (DEMO) ---- */
+      .demo { text-align: center; }
       .demo-url {
-        margin-top: 2rem;
-        font-family:
-          ui-monospace, "SFMono-Regular", "Cascadia Mono", "JetBrains Mono",
-          monospace;
-        font-size: 1.4rem;
+        margin-top: 1.5rem;
+        font-family: ui-monospace, "SFMono-Regular", monospace;
+        font-size: 1.25rem;
         font-weight: 600;
         color: var(--primary);
         background: var(--primary-soft);
-        padding: 1rem 1.75rem;
+        padding: 0.85rem 1.5rem;
         border-radius: 9999px;
         display: inline-block;
       }
       .creds {
-        margin-top: 2rem;
+        margin-top: 1.5rem;
         display: inline-block;
         text-align: left;
         background: #fff;
         border: 1px solid var(--border);
         border-radius: var(--radius);
-        padding: 1.25rem 1.75rem;
+        padding: 1.1rem 1.5rem;
         font-size: 0.95rem;
         line-height: 1.7;
       }
       .creds code {
-        font-family:
-          ui-monospace, "SFMono-Regular", "Cascadia Mono", "JetBrains Mono",
-          monospace;
+        font-family: ui-monospace, "SFMono-Regular", monospace;
         background: var(--primary-soft);
         color: var(--primary-dark);
         padding: 2px 8px;
@@ -331,52 +443,175 @@
         font-size: 0.85rem;
       }
 
-      /* ---- Slide 5: FEATURE LIST ---- */
-      .features {
+      /* ---- Slide 6 (FEATURES) — dashboard mockups ---- */
+      .features-grid {
         display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 0.85rem 2rem;
-        margin-top: 1.75rem;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-top: 1.5rem;
+        align-items: start;
       }
-      .feature {
+      .feature-mock {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 1rem;
+        box-shadow: var(--shadow-md);
+      }
+      .browser-chrome {
         display: flex;
-        gap: 0.85rem;
-        align-items: flex-start;
-        padding: 0.5rem 0;
+        gap: 5px;
+        padding: 6px 10px;
+        background: hsl(240 5% 96%);
+        border-radius: 8px 8px 0 0;
+        margin: -1rem -1rem 0.85rem;
+        border-bottom: 1px solid var(--border);
       }
-      .feature-check {
-        width: 28px;
-        height: 28px;
+      .browser-dot {
+        width: 9px; height: 9px;
         border-radius: 50%;
-        background: var(--primary-soft);
-        color: var(--primary);
-        display: grid;
-        place-items: center;
-        flex-shrink: 0;
-        font-weight: 700;
       }
-      .feature-text strong {
-        display: block;
-        font-weight: 600;
-        margin-bottom: 0.15rem;
+      .browser-dot:nth-child(1) { background: hsl(0 80% 56% / 0.6); }
+      .browser-dot:nth-child(2) { background: hsl(38 92% 50% / 0.7); }
+      .browser-dot:nth-child(3) { background: hsl(152 60% 40% / 0.7); }
+
+      /* Today mockup */
+      .mock-today-time {
+        font-size: 2.25rem;
+        font-weight: 800;
+        line-height: 1;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -0.02em;
       }
-      .feature-text span {
+      .mock-today-day {
+        font-size: 0.7rem;
         color: var(--muted-fg);
+        margin-bottom: 0.85rem;
+      }
+      .mock-nextup-card {
+        background: linear-gradient(155deg, hsl(340 82% 56% / 0.08), #fff 60%);
+        border: 1px solid hsl(340 82% 56% / 0.2);
+        border-radius: 12px;
+        padding: 0.85rem;
+      }
+      .mock-nextup-label {
+        font-size: 0.6rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        font-weight: 700;
+        color: var(--muted-fg);
+        margin-bottom: 0.35rem;
+      }
+      .mock-nextup-customer {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+      }
+      .mock-avatar {
+        height: 42px; width: 42px;
+        border-radius: 50%;
+        background: var(--primary);
+        color: #fff;
+        display: grid; place-items: center;
+        font-weight: 700;
         font-size: 0.95rem;
       }
+      .mock-nextup-name { font-weight: 700; font-size: 1.05rem; line-height: 1.2; }
+      .mock-nextup-svc { color: var(--muted-fg); font-size: 0.78rem; }
+      .mock-nextup-when {
+        margin-top: 0.3rem;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--primary);
+        font-variant-numeric: tabular-nums;
+      }
+      .mock-nextup-actions { display: flex; gap: 0.5rem; margin-top: 0.8rem; }
+      .mock-btn {
+        padding: 5px 12px;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .mock-btn-primary { background: var(--primary); color: #fff; }
+      .mock-btn-ghost { background: transparent; color: var(--muted-fg); }
 
-      /* ---- Slide 6: PRICING ---- */
+      /* Earnings mockup */
+      .mock-kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.5rem;
+        margin-bottom: 0.85rem;
+      }
+      .mock-kpi {
+        padding: 0.7rem 0.55rem;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: #fff;
+      }
+      .mock-kpi-label {
+        font-size: 0.55rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted-fg);
+        font-weight: 700;
+      }
+      .mock-kpi-value {
+        font-size: 1.1rem;
+        font-weight: 800;
+        margin-top: 4px;
+        font-variant-numeric: tabular-nums;
+      }
+      .mock-kpi-sub {
+        font-size: 0.55rem;
+        color: var(--muted-fg);
+        margin-top: 2px;
+      }
+      .mock-kpi-value.earned { color: var(--success); }
+      .mock-kpi-value.projected { color: var(--primary); }
+      .mock-kpi-value.lost { color: hsl(0 70% 50%); }
+
+      .mock-chart {
+        display: flex;
+        align-items: flex-end;
+        gap: 4px;
+        height: 80px;
+        padding-top: 6px;
+        border-top: 1px solid var(--border);
+      }
+      .mock-bar {
+        flex: 1;
+        display: flex;
+        flex-direction: column-reverse;
+        border-radius: 4px;
+        overflow: hidden;
+        background: hsl(240 5% 96%);
+      }
+      .mock-bar-earned { background: var(--success); }
+      .mock-bar-projected { background: hsl(340 82% 56% / 0.5); }
+      .mock-chart-label {
+        font-size: 0.55rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted-fg);
+        font-weight: 700;
+        margin-bottom: 0.45rem;
+      }
+
+      /* ---- Slide 7 (PRICING) ---- */
       .pricing {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         gap: 1rem;
-        margin-top: 1.75rem;
+        margin-top: 1.5rem;
       }
       .tier {
         background: #fff;
         border: 1px solid var(--border);
         border-radius: var(--radius);
-        padding: 1.75rem;
+        padding: 1.5rem;
         display: flex;
         flex-direction: column;
       }
@@ -385,32 +620,26 @@
         color: #fff;
         border-color: transparent;
         box-shadow: var(--shadow-lg);
-        transform: translateY(-12px);
+        transform: translateY(-10px);
       }
       .tier-featured .tier-price,
-      .tier-featured .tier-name {
-        color: #fff;
-      }
-      .tier-featured ul li {
-        color: hsl(0 0% 100% / 0.9);
-      }
-      .tier-featured ul li::before {
-        background: hsl(0 0% 100% / 0.25);
-      }
+      .tier-featured .tier-name { color: #fff; }
+      .tier-featured ul li { color: hsl(0 0% 100% / 0.9); }
+      .tier-featured ul li::before { background: hsl(0 0% 100% / 0.25); }
       .tier-badge {
         align-self: flex-start;
         background: hsl(0 0% 100% / 0.25);
         color: #fff;
-        padding: 0.25rem 0.65rem;
+        padding: 0.2rem 0.55rem;
         border-radius: 9999px;
-        font-size: 0.65rem;
+        font-size: 0.6rem;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.08em;
-        margin-bottom: 0.85rem;
+        margin-bottom: 0.7rem;
       }
       .tier-name {
-        font-size: 1rem;
+        font-size: 0.95rem;
         font-weight: 600;
         color: var(--muted-fg);
         text-transform: uppercase;
@@ -418,61 +647,50 @@
         margin-bottom: 0.5rem;
       }
       .tier-price {
-        font-size: 2.5rem;
+        font-size: 2.3rem;
         font-weight: 800;
         line-height: 1;
         letter-spacing: -0.02em;
-        margin-bottom: 0.25rem;
+        margin-bottom: 0.2rem;
         font-variant-numeric: tabular-nums;
       }
       .tier-price small {
-        font-size: 0.95rem;
+        font-size: 0.9rem;
         font-weight: 500;
         color: var(--muted-fg);
       }
-      .tier-featured .tier-price small {
-        color: hsl(0 0% 100% / 0.8);
-      }
-      .tier-sub {
-        font-size: 0.85rem;
-        color: var(--muted-fg);
-        margin-bottom: 1.25rem;
-      }
-      .tier-featured .tier-sub {
-        color: hsl(0 0% 100% / 0.85);
-      }
+      .tier-featured .tier-price small { color: hsl(0 0% 100% / 0.8); }
+      .tier-sub { font-size: 0.85rem; color: var(--muted-fg); margin-bottom: 1.1rem; }
+      .tier-featured .tier-sub { color: hsl(0 0% 100% / 0.85); }
       .tier ul {
         list-style: none;
-        padding: 0;
-        margin: 0;
-        font-size: 0.9rem;
-        line-height: 1.65;
+        padding: 0; margin: 0;
+        font-size: 0.85rem;
+        line-height: 1.6;
         color: var(--muted-fg);
       }
       .tier ul li {
         position: relative;
-        padding-left: 1.5rem;
-        margin-bottom: 0.4rem;
+        padding-left: 1.4rem;
+        margin-bottom: 0.35rem;
       }
       .tier ul li::before {
         content: "";
         position: absolute;
-        left: 0.25rem;
-        top: 0.55rem;
-        width: 0.5rem;
-        height: 0.5rem;
+        left: 0.25rem; top: 0.55rem;
+        width: 0.45rem; height: 0.45rem;
         border-radius: 50%;
         background: var(--primary-soft);
         border: 2px solid var(--primary);
         box-sizing: border-box;
       }
 
-      /* ---- Slide 7: ROADMAP ---- */
+      /* ---- Slide 8 (ROADMAP) ---- */
       .roadmap {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         gap: 1.25rem;
-        margin-top: 2rem;
+        margin-top: 1.75rem;
       }
       .roadmap-col h3 {
         font-size: 0.7rem;
@@ -480,69 +698,52 @@
         letter-spacing: 0.12em;
         color: var(--muted-fg);
         font-weight: 700;
-        margin-bottom: 0.85rem;
+        margin-bottom: 0.75rem;
       }
       .roadmap-col h3 .dot {
         display: inline-block;
-        width: 0.5rem;
-        height: 0.5rem;
+        width: 0.5rem; height: 0.5rem;
         border-radius: 50%;
         background: var(--success);
         margin-right: 0.35rem;
         vertical-align: middle;
       }
-      .roadmap-col h3 .dot.next {
-        background: var(--warning);
-      }
-      .roadmap-col h3 .dot.future {
-        background: var(--primary);
-      }
+      .roadmap-col h3 .dot.next { background: var(--warning); }
+      .roadmap-col h3 .dot.future { background: var(--primary); }
       .roadmap-col ul {
         list-style: none;
-        padding: 0;
-        margin: 0;
-        line-height: 1.75;
+        padding: 0; margin: 0;
+        line-height: 1.7;
       }
       .roadmap-col li {
-        padding: 0.35rem 0;
-        font-size: 0.95rem;
+        padding: 0.3rem 0;
+        font-size: 0.9rem;
         border-bottom: 1px solid var(--border);
       }
-      .roadmap-col li:last-child {
-        border-bottom: none;
-      }
+      .roadmap-col li:last-child { border-bottom: none; }
 
-      /* ---- Slide 8: CLOSING ---- */
-      .closing {
-        text-align: center;
-      }
+      /* ---- Slide 9 (CLOSING) ---- */
+      .closing { text-align: center; }
       .closing-glyph {
-        height: 80px;
-        width: 80px;
-        margin: 0 auto 1.75rem;
+        height: 80px; width: 80px;
+        margin: 0 auto 1.5rem;
         border-radius: 24px;
         background: var(--primary);
         color: #fff;
-        display: grid;
-        place-items: center;
-        font-size: 50px;
-        font-weight: 700;
-        line-height: 1;
-        padding-top: 2px;
+        display: grid; place-items: center;
+        font-size: 50px; font-weight: 700; line-height: 1; padding-top: 2px;
         box-shadow: var(--shadow-lg);
       }
       .thank-you {
-        font-size: clamp(3rem, 7vw, 5.5rem);
+        font-size: clamp(2.5rem, 6vw, 5rem);
         font-weight: 800;
         letter-spacing: -0.02em;
         line-height: 1;
         margin-bottom: 0.75rem;
       }
-      .thank-you-mk {
-        color: var(--primary);
-      }
+      .thank-you-mk { color: var(--primary); }
       .closing-links {
-        margin-top: 2.5rem;
+        margin-top: 2.25rem;
         display: flex;
         gap: 1.25rem;
         justify-content: center;
@@ -556,7 +757,6 @@
         padding-bottom: 1px;
       }
 
-      /* ---- Decorative blur orb for hero/closing slides ---- */
       .orb {
         position: absolute;
         border-radius: 50%;
@@ -565,27 +765,18 @@
         pointer-events: none;
       }
 
-      /* ---- Responsive ---- */
       @media (max-width: 900px) {
-        .slide {
-          padding: 3rem 1.75rem;
-        }
+        .slide { padding: 2.5rem 1.5rem; }
         .problem-grid,
         .solution-grid,
-        .features,
+        .how-it-works,
+        .features-grid,
         .pricing,
-        .roadmap {
-          grid-template-columns: 1fr !important;
-        }
-        .tier-featured {
-          transform: none;
-        }
+        .roadmap { grid-template-columns: 1fr !important; }
+        .tier-featured { transform: none; }
       }
       @media (prefers-reduced-motion: reduce) {
-        .slide {
-          transition: opacity 100ms;
-          transform: none !important;
-        }
+        .slide { transition: opacity 100ms; transform: none !important; }
       }
     </style>
   </head>
@@ -595,74 +786,68 @@
       Berberica
     </a>
     <div class="hint">
-      Use <kbd>→</kbd> <kbd>←</kbd> to navigate · <kbd>F</kbd> for fullscreen
+      Користи <kbd>→</kbd> <kbd>←</kbd> за навигација · <kbd>F</kbd> за цел екран
     </div>
-    <div class="counter" id="counter">1 / 8</div>
+    <div class="counter" id="counter">1 / 9</div>
 
     <main class="deck" id="deck">
       <!-- ============================================================
-           Slide 1 — TITLE
+           Слајд 1 — НАСЛОВНА
            ============================================================ -->
       <section class="slide slide-hero active">
-        <div
-          class="orb"
-          style="top: -100px; right: -50px; height: 380px; width: 380px; background: hsl(340 82% 56%);"
-        ></div>
-        <div
-          class="orb"
-          style="bottom: -80px; left: -60px; height: 320px; width: 320px; background: hsl(20 90% 65%);"
-        ></div>
+        <div class="orb" style="top: -100px; right: -50px; height: 380px; width: 380px; background: hsl(340 82% 56%);"></div>
+        <div class="orb" style="bottom: -80px; left: -60px; height: 320px; width: 320px; background: hsl(20 90% 65%);"></div>
         <div class="slide-inner hero-content">
           <div class="hero-glyph">б</div>
           <h1>Berberica</h1>
           <p class="lead" style="margin: 0 auto;">
-            Bookings without the back-and-forth — a multi-tenant platform for
-            barbers, salons, and beauty studios.
+            Резервации без неред и допишување — една платформа за берберници,
+            салони и студија за убавина.
           </p>
           <div class="hero-meta">
-            <span><strong>Hackathon 2026</strong></span>
+            <span><strong>Хакатон 2026</strong></span>
             <span aria-hidden>·</span>
-            <span>Built in <strong>Skopje</strong></span>
+            <span>Изработено во <strong>Кочани</strong></span>
             <span aria-hidden>·</span>
-            <span>Live in <strong>EN + Македонски</strong></span>
+            <span>Достапно на <strong>македонски + English</strong></span>
           </div>
         </div>
       </section>
 
       <!-- ============================================================
-           Slide 2 — PROBLEM
+           Слајд 2 — ПРОБЛЕМ
            ============================================================ -->
       <section class="slide">
         <div class="slide-inner">
-          <span class="eyebrow">The problem</span>
-          <h1>Bookings are still broken.</h1>
+          <span class="eyebrow">Проблемот</span>
+          <h1>Резервациите се сè уште скршени.</h1>
           <p class="lead">
-            For an industry worth billions of euros a year, scheduling a
-            haircut still runs on phone tag and Instagram DMs.
+            Индустрија вредна милијарди евра годишно — а закажување шишање
+            сè уште се прави преку телефон и Instagram пораки.
           </p>
           <div class="problem-grid">
             <div class="problem-card">
               <div class="problem-stat">73%</div>
-              <h3>Booked over phone / DM</h3>
+              <h3>Резервации преку телефон / DM</h3>
               <p>
-                Customers waste their lunch break trying to catch the venue
-                on the line. Venues waste their day answering.
+                Клиентите ја губат паузата на работа обидувајќи се да го
+                фатат местото на врска. Местата го губат денот одговарајќи.
               </p>
             </div>
             <div class="problem-card">
               <div class="problem-stat">€2K+</div>
-              <h3>Lost per chair, per month</h3>
+              <h3>Изгубени по стол, месечно</h3>
               <p>
-                No-shows, double-bookings, and missed slots quietly eat the
-                margin of every small venue.
+                Не-дојдени клиенти, двојни резервации и пропуштени термини
+                тивко ја јадат маржата на секое мало место.
               </p>
             </div>
             <div class="problem-card">
               <div class="problem-stat">0</div>
-              <h3>Owners who know last week's revenue</h3>
+              <h3>Сопственици што знаат колку заработиле минатата недела</h3>
               <p>
-                No dashboard, no aggregation, no "which service made the
-                most money". You guess, or you ask the accountant in March.
+                Без табла, без агрегација, без „која услуга донесе најмногу".
+                Се претпоставува, или прашуваш сметководителот во март.
               </p>
             </div>
           </div>
@@ -670,40 +855,41 @@
       </section>
 
       <!-- ============================================================
-           Slide 3 — SOLUTION
+           Слајд 3 — РЕШЕНИЕ
            ============================================================ -->
       <section class="slide">
         <div class="slide-inner">
-          <span class="eyebrow">The solution</span>
-          <h1>One platform. Three jobs done.</h1>
+          <span class="eyebrow">Решението</span>
+          <h1>Една платформа. Три завршени задачи.</h1>
           <p class="lead">
-            Berberica is a customer-facing storefront, a staff-facing
-            scheduler, and an owner-facing P&amp;L — under one roof.
+            Berberica е страница за клиентите, распоред за тимот и
+            финансиски преглед за сопственикот — на едно место.
           </p>
           <div class="solution-grid">
             <div class="solution-card">
               <div class="solution-icon">🏪</div>
-              <h3>Storefront in 60 seconds</h3>
+              <h3>Страница за 60 секунди</h3>
               <p>
-                Every venue gets a branded booking page with its own logo,
-                colors, and address — at
-                <code style="font-size: 0.85em;">/your-name</code>.
+                Секое место добива брендирана страница за резервации со
+                свое лого, бои и адреса — на
+                <code style="font-size: 0.85em;">/твоето-име</code>.
               </p>
             </div>
             <div class="solution-card">
               <div class="solution-icon">📱</div>
-              <h3>Bookings that just work</h3>
+              <h3>Резервации што работат</h3>
               <p>
-                Real-time slots, email-verified guests, no double-bookings.
-                Mobile-first — the booking flow looks native on a phone.
+                Слободни термини во реално време, верификација преку имејл
+                за гости, без двојни резервации. Mobile-first — текот
+                изгледа како апликација на телефон.
               </p>
             </div>
             <div class="solution-card">
               <div class="solution-icon">💰</div>
-              <h3>Earnings on demand</h3>
+              <h3>Заработка на прв тап</h3>
               <p>
-                "How much did we make this week? Which barber is top?"
-                Answered in one tap from the Today screen.
+                „Колку заработивме оваа недела? Кој е најуспешен?"
+                Одговорено со еден тап од почетниот екран.
               </p>
             </div>
           </div>
@@ -711,146 +897,288 @@
       </section>
 
       <!-- ============================================================
-           Slide 4 — DEMO
+           Слајд 4 — КАКО ФУНКЦИОНИРА (со мокапи)
+           ============================================================ -->
+      <section class="slide">
+        <div class="slide-inner">
+          <span class="eyebrow">Како функционира</span>
+          <h1>Од „каде си?" до „благодарам, ќе се видиме во 14:30".</h1>
+          <p class="lead">
+            Целиот тек на резервирање — три тапа на телефонот, без чекање
+            некој да потврди.
+          </p>
+
+          <div class="how-it-works">
+            <!-- STEP 1: Pick service -->
+            <div class="step-block">
+              <div class="step-num">1</div>
+              <div class="step-title">Избери услуга</div>
+              <p class="step-sub">
+                Сите услуги со цена и времетраење, во еден поглед.
+              </p>
+              <div class="phone">
+                <div class="phone-notch"></div>
+                <div class="phone-header">Elite Barbers · Услуги</div>
+                <div class="mock-service active">
+                  <div>
+                    <div class="mock-service-name">Класично шишање</div>
+                    <div class="mock-service-meta">30 мин</div>
+                  </div>
+                  <div class="mock-service-price">€12</div>
+                </div>
+                <div class="mock-service">
+                  <div>
+                    <div class="mock-service-name">Hot-Towel Shave</div>
+                    <div class="mock-service-meta">45 мин</div>
+                  </div>
+                  <div class="mock-service-price">€18</div>
+                </div>
+                <div class="mock-service">
+                  <div>
+                    <div class="mock-service-name">Брада</div>
+                    <div class="mock-service-meta">20 мин</div>
+                  </div>
+                  <div class="mock-service-price">€8</div>
+                </div>
+                <div class="mock-service">
+                  <div>
+                    <div class="mock-service-name">Skin Fade</div>
+                    <div class="mock-service-meta">45 мин</div>
+                  </div>
+                  <div class="mock-service-price">€15</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- STEP 2: Pick a slot -->
+            <div class="step-block">
+              <div class="step-num">2</div>
+              <div class="step-title">Избери термин</div>
+              <p class="step-sub">
+                Само слободните слотови. Без двојни резервации, без чекање
+                за потврда.
+              </p>
+              <div class="phone">
+                <div class="phone-notch"></div>
+                <div class="phone-header">Среда · 21 мај</div>
+                <div class="mock-date-strip">
+                  <div class="mock-date"><div class="mock-date-day">пон</div><div class="mock-date-num">19</div></div>
+                  <div class="mock-date"><div class="mock-date-day">вто</div><div class="mock-date-num">20</div></div>
+                  <div class="mock-date active"><div class="mock-date-day">сре</div><div class="mock-date-num">21</div></div>
+                  <div class="mock-date"><div class="mock-date-day">чет</div><div class="mock-date-num">22</div></div>
+                  <div class="mock-date"><div class="mock-date-day">пет</div><div class="mock-date-num">23</div></div>
+                </div>
+                <div class="mock-slot-group">Утро</div>
+                <div class="mock-slots">
+                  <div class="mock-slot">09:00</div>
+                  <div class="mock-slot">09:30</div>
+                  <div class="mock-slot">10:00</div>
+                </div>
+                <div class="mock-slot-group">Попладне</div>
+                <div class="mock-slots">
+                  <div class="mock-slot">14:00</div>
+                  <div class="mock-slot active">14:30</div>
+                  <div class="mock-slot">15:00</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- STEP 3: Confirmed -->
+            <div class="step-block">
+              <div class="step-num">3</div>
+              <div class="step-title">Резервирано</div>
+              <p class="step-sub">
+                Шест-цифрен код по имејл, потврда веднаш, термин во
+                календарот.
+              </p>
+              <div class="phone">
+                <div class="phone-notch"></div>
+                <div class="phone-header" style="text-align: center;">
+                  Готово
+                </div>
+                <div class="mock-confirm-icon">✓</div>
+                <div class="mock-confirm-title">Резервирано!</div>
+                <div class="mock-confirm-body">
+                  <strong>Класично шишање</strong>
+                  Среда, 21 мај · 14:30<br />
+                  со Marko Petrov · 30 мин
+                </div>
+                <div class="mock-confirm-ref">
+                  бр. 9a3f-21be
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================
+           Слајд 5 — ЖИВА ДЕМОНСТРАЦИЈА
            ============================================================ -->
       <section class="slide">
         <div class="slide-inner demo">
-          <span class="eyebrow">Live demo</span>
-          <h1>Try it now.</h1>
+          <span class="eyebrow">Жива демонстрација</span>
+          <h1>Пробај сега.</h1>
           <p class="lead" style="margin: 0 auto;">
-            Real production data. Set a service, book a slot, mark the
-            customer arrived — see the revenue land on the dashboard.
+            Реални продукциски податоци. Постави услуга, резервирај термин,
+            означи го клиентот како присутен — гледај како приходот се
+            појавува на таблата.
           </p>
           <div class="demo-url">
             web-production-42e42.up.railway.app/elite-barbers
           </div>
           <div class="creds">
-            <strong>Or log in as the venue owner:</strong><br />
-            email&nbsp;&nbsp;&nbsp;<code>admin@elite-barbers.test</code><br />
-            password <code>dev-password-123</code>
+            <strong>Или најави се како сопственик на местото:</strong><br />
+            имејл&nbsp;&nbsp;<code>admin@elite-barbers.test</code><br />
+            лозинка <code>dev-password-123</code>
           </div>
         </div>
       </section>
 
       <!-- ============================================================
-           Slide 5 — FEATURE HIGHLIGHTS
+           Слајд 6 — КЛУЧНИ ФУНКЦИИ (со мокапи на табли)
            ============================================================ -->
       <section class="slide">
         <div class="slide-inner">
-          <span class="eyebrow">What's already built</span>
-          <h1>Production-ready, day one.</h1>
+          <span class="eyebrow">Што е веќе изградено</span>
+          <h1>Подготвено за продукција, од прв ден.</h1>
           <p class="lead">
-            Not a prototype — every feature below works in the live app.
+            Не е прототип — секоја функција подолу работи во живата
+            апликација токму сега.
           </p>
-          <div class="features">
-            <div class="feature">
-              <div class="feature-check">✓</div>
-              <div class="feature-text">
-                <strong>Real-time availability engine</strong>
-                <span>Exclusion-constraint enforced. No double-booking is possible at the DB level.</span>
+
+          <div class="features-grid">
+            <!-- Today page mockup -->
+            <div class="feature-mock">
+              <div class="browser-chrome">
+                <span class="browser-dot"></span>
+                <span class="browser-dot"></span>
+                <span class="browser-dot"></span>
               </div>
+              <div class="mock-today-time">14:22</div>
+              <div class="mock-today-day">среда, 21 мај</div>
+              <div class="mock-nextup-card">
+                <div class="mock-nextup-label">Следно · за 8 мин</div>
+                <div class="mock-nextup-customer">
+                  <div class="mock-avatar">БС</div>
+                  <div>
+                    <div class="mock-nextup-name">Бојан Стојановски</div>
+                    <div class="mock-nextup-svc">Класично шишање · Marko Petrov</div>
+                    <div class="mock-nextup-when">14:30 – 15:00 · 30 мин</div>
+                  </div>
+                </div>
+                <div class="mock-nextup-actions">
+                  <span class="mock-btn mock-btn-primary">✓ Присутен</span>
+                  <span class="mock-btn mock-btn-ghost">✗ Не дојде</span>
+                </div>
+              </div>
+              <h3 style="margin-top: 0.85rem; font-size: 0.95rem;">Денешен распоред на еден екран</h3>
+              <p style="margin: 0.25rem 0 0; color: var(--muted-fg); font-size: 0.85rem; line-height: 1.45;">
+                Жив часовник, претстоен клиент, еден тап за „присутен" или
+                „завршено" — приходот веднаш паѓа во таблата за заработка.
+              </p>
             </div>
-            <div class="feature">
-              <div class="feature-check">✓</div>
-              <div class="feature-text">
-                <strong>Email verification on every guest booking</strong>
-                <span>OTP delivered via Resend. Anti-enumeration, rate-limited, single-use.</span>
+
+            <!-- Earnings page mockup -->
+            <div class="feature-mock">
+              <div class="browser-chrome">
+                <span class="browser-dot"></span>
+                <span class="browser-dot"></span>
+                <span class="browser-dot"></span>
               </div>
-            </div>
-            <div class="feature">
-              <div class="feature-check">✓</div>
-              <div class="feature-text">
-                <strong>One-tap status flow for the barber</strong>
-                <span>Mark arrived → completed. Earnings update instantly.</span>
+              <div class="mock-kpi-grid">
+                <div class="mock-kpi">
+                  <div class="mock-kpi-label">Заработено</div>
+                  <div class="mock-kpi-value earned">€847</div>
+                  <div class="mock-kpi-sub">42 завршени</div>
+                </div>
+                <div class="mock-kpi">
+                  <div class="mock-kpi-label">Очекувано</div>
+                  <div class="mock-kpi-value projected">€1,240</div>
+                  <div class="mock-kpi-sub">58 претстојни</div>
+                </div>
+                <div class="mock-kpi">
+                  <div class="mock-kpi-label">Изгубено</div>
+                  <div class="mock-kpi-value lost">€124</div>
+                  <div class="mock-kpi-sub">8 откажани</div>
+                </div>
               </div>
-            </div>
-            <div class="feature">
-              <div class="feature-check">✓</div>
-              <div class="feature-text">
-                <strong>Embedded location map</strong>
-                <span>Customers see exactly where they're going. One tap → Google Maps directions.</span>
+              <div class="mock-chart-label">Дневен приход — 14 дена</div>
+              <div class="mock-chart">
+                <div class="mock-bar" style="height: 30%;"><div class="mock-bar-earned" style="height: 100%;"></div></div>
+                <div class="mock-bar" style="height: 55%;"><div class="mock-bar-earned" style="height: 80%;"></div></div>
+                <div class="mock-bar" style="height: 40%;"><div class="mock-bar-earned" style="height: 100%;"></div></div>
+                <div class="mock-bar" style="height: 65%;"><div class="mock-bar-earned" style="height: 100%;"></div></div>
+                <div class="mock-bar" style="height: 80%;"><div class="mock-bar-earned" style="height: 75%;"></div></div>
+                <div class="mock-bar" style="height: 60%;"><div class="mock-bar-earned" style="height: 90%;"></div></div>
+                <div class="mock-bar" style="height: 45%;"><div class="mock-bar-earned" style="height: 100%;"></div></div>
+                <div class="mock-bar" style="height: 70%;"><div class="mock-bar-earned" style="height: 65%;"></div></div>
+                <div class="mock-bar" style="height: 85%;"><div class="mock-bar-projected" style="height: 100%;"></div></div>
+                <div class="mock-bar" style="height: 55%;"><div class="mock-bar-projected" style="height: 100%;"></div></div>
+                <div class="mock-bar" style="height: 70%;"><div class="mock-bar-projected" style="height: 100%;"></div></div>
+                <div class="mock-bar" style="height: 90%;"><div class="mock-bar-projected" style="height: 100%;"></div></div>
+                <div class="mock-bar" style="height: 75%;"><div class="mock-bar-projected" style="height: 100%;"></div></div>
+                <div class="mock-bar" style="height: 60%;"><div class="mock-bar-projected" style="height: 100%;"></div></div>
               </div>
-            </div>
-            <div class="feature">
-              <div class="feature-check">✓</div>
-              <div class="feature-text">
-                <strong>Earnings dashboard</strong>
-                <span>Earned vs projected vs lost. Top services + top staff. Daily bar chart.</span>
-              </div>
-            </div>
-            <div class="feature">
-              <div class="feature-check">✓</div>
-              <div class="feature-text">
-                <strong>Bilingual UI</strong>
-                <span>English + Македонски. Switch in one tap. Cookies remember per session.</span>
-              </div>
-            </div>
-            <div class="feature">
-              <div class="feature-check">✓</div>
-              <div class="feature-text">
-                <strong>Per-tenant branding</strong>
-                <span>Upload your own logo. Set your brand colors. Storefront takes them automatically.</span>
-              </div>
-            </div>
-            <div class="feature">
-              <div class="feature-check">✓</div>
-              <div class="feature-text">
-                <strong>Tenant isolation</strong>
-                <span>Every API call is scoped to the resolved tenant. Cross-venue leaks are structurally impossible.</span>
-              </div>
+              <h3 style="margin-top: 0.85rem; font-size: 0.95rem;">Заработка на еден поглед</h3>
+              <p style="margin: 0.25rem 0 0; color: var(--muted-fg); font-size: 0.85rem; line-height: 1.45;">
+                Завршено наспроти очекувано наспроти изгубено. Топ
+                услуги, топ членови. Дневен графикон.
+              </p>
             </div>
           </div>
         </div>
       </section>
 
       <!-- ============================================================
-           Slide 6 — MONETIZATION
+           Слајд 7 — МОНЕТИЗАЦИЈА
            ============================================================ -->
       <section class="slide">
         <div class="slide-inner">
-          <span class="eyebrow">Business model</span>
-          <h1>Subscription per venue.</h1>
+          <span class="eyebrow">Бизнис модел</span>
+          <h1>Претплата по место.</h1>
           <p class="lead">
-            Free to start. Pay when you outgrow it. No fee per booking — the
-            venue keeps 100% of what the customer pays.
+            Бесплатно за почеток. Плаќаш кога ќе ти треба повеќе. Никаков
+            процент по резервација — местото задржува 100% од она што го
+            плаќа клиентот.
           </p>
           <div class="pricing">
             <div class="tier">
-              <div class="tier-name">Starter</div>
-              <div class="tier-price">€0<small> / month</small></div>
-              <div class="tier-sub">Get up and running for free</div>
+              <div class="tier-name">Старт</div>
+              <div class="tier-price">€0<small> / месечно</small></div>
+              <div class="tier-sub">Започни бесплатно</div>
               <ul>
-                <li>1 staff member</li>
-                <li>Up to 30 bookings / month</li>
-                <li>Branded storefront URL</li>
-                <li>Email verification</li>
-                <li>Community support</li>
+                <li>1 член на тимот</li>
+                <li>До 30 резервации / месечно</li>
+                <li>Брендирана страница</li>
+                <li>Верификација преку имејл</li>
+                <li>Поддршка во заедницата</li>
               </ul>
             </div>
             <div class="tier tier-featured">
-              <span class="tier-badge">Most popular</span>
+              <span class="tier-badge">Најпопуларно</span>
               <div class="tier-name" style="color: hsl(0 0% 100% / 0.85);">Pro</div>
-              <div class="tier-price">€19<small> / month</small></div>
-              <div class="tier-sub">For working venues with 2-5 chairs</div>
+              <div class="tier-price">€19<small> / месечно</small></div>
+              <div class="tier-sub">За места со 2-5 столчиња</div>
               <ul>
-                <li>Unlimited staff</li>
-                <li>Unlimited bookings</li>
-                <li>Full earnings dashboard</li>
-                <li>Custom branding (logo + colors)</li>
-                <li>Email + SMS notifications</li>
-                <li>Priority support</li>
+                <li>Неограничен тим</li>
+                <li>Неограничени резервации</li>
+                <li>Целосна табла за заработка</li>
+                <li>Брендирање (лого + бои)</li>
+                <li>Имејл + SMS известувања</li>
+                <li>Приоритетна поддршка</li>
               </ul>
             </div>
             <div class="tier">
-              <div class="tier-name">Studio</div>
-              <div class="tier-price">€49<small> / month</small></div>
-              <div class="tier-sub">For salons with multiple locations</div>
+              <div class="tier-name">Студио</div>
+              <div class="tier-price">€49<small> / месечно</small></div>
+              <div class="tier-sub">За салони со повеќе локации</div>
               <ul>
-                <li>Everything in Pro</li>
-                <li>Multi-location support</li>
-                <li>Advanced analytics &amp; export</li>
-                <li>Custom integrations API</li>
-                <li>Dedicated onboarding</li>
+                <li>Сè од Pro</li>
+                <li>Поддршка за повеќе локации</li>
+                <li>Напредна аналитика + извоз</li>
+                <li>API за интеграции</li>
+                <li>Личен онбординг</li>
               </ul>
             </div>
           </div>
@@ -858,46 +1186,45 @@
       </section>
 
       <!-- ============================================================
-           Slide 7 — ROADMAP
+           Слајд 8 — ШТО СЛЕДИ
            ============================================================ -->
       <section class="slide">
         <div class="slide-inner">
-          <span class="eyebrow">What's next</span>
-          <h1>Roadmap.</h1>
+          <span class="eyebrow">Што следи</span>
+          <h1>План.</h1>
           <p class="lead">
-            We're not done. Here's where we go from the hackathon to a real
-            product.
+            Не е готово. Еве каде одиме од хакатонот до вистински производ.
           </p>
           <div class="roadmap">
             <div class="roadmap-col">
-              <h3><span class="dot"></span>Shipped today</h3>
+              <h3><span class="dot"></span>Веќе испорачано</h3>
               <ul>
-                <li>Multi-tenant storefront</li>
-                <li>Real-time booking engine</li>
-                <li>Email verification + OTP</li>
-                <li>Earnings dashboard</li>
-                <li>Per-tenant branding</li>
-                <li>EN + MK localization</li>
+                <li>Multi-tenant страница</li>
+                <li>Движок за резервации во реално време</li>
+                <li>Верификација преку имејл + OTP</li>
+                <li>Табла за заработка</li>
+                <li>Брендирање по место</li>
+                <li>EN + MK локализација</li>
               </ul>
             </div>
             <div class="roadmap-col">
-              <h3><span class="dot next"></span>Next 30 days</h3>
+              <h3><span class="dot next"></span>Следните 30 дена</h3>
               <ul>
-                <li>SMS reminders 24h before</li>
-                <li>Stripe / payment integration</li>
-                <li>Customer reviews + ratings</li>
-                <li>Calendar export (.ics)</li>
-                <li>Forgot-password flow</li>
+                <li>SMS потсетници 24ч однапред</li>
+                <li>Stripe / интеграција за плаќање</li>
+                <li>Оценки и осврти од клиенти</li>
+                <li>Извоз во календар (.ics)</li>
+                <li>„Заборавена лозинка" тек</li>
               </ul>
             </div>
             <div class="roadmap-col">
-              <h3><span class="dot future"></span>Future</h3>
+              <h3><span class="dot future"></span>Иднина</h3>
               <ul>
-                <li>Loyalty programs / punch cards</li>
-                <li>Walk-in queue management</li>
-                <li>Marketing campaigns</li>
-                <li>Native iOS + Android apps</li>
-                <li>Inventory / product retail</li>
+                <li>Програма за лојалност</li>
+                <li>Walk-in редица</li>
+                <li>Маркетинг кампањи</li>
+                <li>Native iOS + Android апликации</li>
+                <li>Инвентар / малопродажба</li>
               </ul>
             </div>
           </div>
@@ -905,32 +1232,26 @@
       </section>
 
       <!-- ============================================================
-           Slide 8 — CLOSING / Q&A
+           Слајд 9 — ЗАТВАРАЊЕ
            ============================================================ -->
       <section class="slide slide-hero">
-        <div
-          class="orb"
-          style="top: -50px; left: 20%; height: 320px; width: 320px; background: hsl(340 82% 56%);"
-        ></div>
-        <div
-          class="orb"
-          style="bottom: 10%; right: 5%; height: 260px; width: 260px; background: hsl(20 90% 65%);"
-        ></div>
+        <div class="orb" style="top: -50px; left: 20%; height: 320px; width: 320px; background: hsl(340 82% 56%);"></div>
+        <div class="orb" style="bottom: 10%; right: 5%; height: 260px; width: 260px; background: hsl(20 90% 65%);"></div>
         <div class="slide-inner closing">
           <div class="closing-glyph">б</div>
           <div class="thank-you">
-            <span class="thank-you-mk">Благодариме.</span> Thank you.
+            <span class="thank-you-mk">Благодариме.</span>
           </div>
           <p class="lead" style="margin: 1rem auto 0;">
-            Questions? We have answers. (And if we don't, we'll ship them
-            next sprint.)
+            Прашања? Имаме одговори. (А ако немаме — ќе ги испорачаме во
+            следниот спринт.)
           </p>
           <div class="closing-links">
             <a href="https://web-production-42e42.up.railway.app">
               web-production-42e42.up.railway.app
             </a>
             <a href="https://web-production-42e42.up.railway.app/elite-barbers">
-              /elite-barbers (demo)
+              /elite-barbers (демо)
             </a>
           </div>
         </div>
@@ -938,7 +1259,7 @@
     </main>
 
     <script>
-      // Minimal slide controller — no framework. Arrow keys / click / digits.
+      // Slide controller — arrows / space / digits / F for fullscreen.
       const slides = document.querySelectorAll(".slide");
       const counter = document.getElementById("counter");
       const total = slides.length;
@@ -955,11 +1276,9 @@
 
       document.addEventListener("keydown", (e) => {
         if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown") {
-          go(idx + 1);
-          e.preventDefault();
+          go(idx + 1); e.preventDefault();
         } else if (e.key === "ArrowLeft" || e.key === "PageUp") {
-          go(idx - 1);
-          e.preventDefault();
+          go(idx - 1); e.preventDefault();
         } else if (e.key === "Home") {
           go(0);
         } else if (e.key === "End") {
@@ -972,9 +1291,8 @@
         }
       });
 
-      // Click anywhere except links / interactive bits advances.
       document.addEventListener("click", (e) => {
-        const t = /** @type {HTMLElement} */ (e.target);
+        const t = e.target;
         if (t.closest("a, button, code, .mark, .hint")) return;
         go(idx + 1);
       });
