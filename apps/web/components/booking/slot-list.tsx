@@ -82,8 +82,9 @@ function SlotGroup({
               onClick={() => onSelect(s)}
               aria-pressed={isSel}
               className={cn(
-                "h-12 rounded-xl border text-base font-medium transition",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                "h-14 rounded-xl border text-base font-medium transition tabular-nums",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                "active:scale-[0.98]",
                 "sm:h-11 sm:text-sm",
                 isSel
                   ? "bg-primary text-primary-foreground border-primary shadow-sm"

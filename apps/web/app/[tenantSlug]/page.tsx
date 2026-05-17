@@ -33,35 +33,45 @@ export default async function StorefrontHome({ params }: Props) {
 
   return (
     <div className="space-y-10 sm:space-y-14">
-      {/* HERO */}
-      <section className="space-y-4">
-        <Badge variant="secondary" className="uppercase tracking-wide text-[10px]">
-          {businessTypeLabel}
-        </Badge>
-        <h1 className="text-display sm:text-[3rem] sm:leading-[1.05] font-bold text-foreground">
-          {profile.name}
-        </h1>
-        {profile.address && (
-          <p className="flex items-center gap-2 text-base text-muted-foreground">
-            <MapPin className="h-4 w-4 shrink-0" aria-hidden />
-            {profile.address}
-          </p>
-        )}
-        <div className="flex flex-col sm:flex-row gap-2 pt-2">
-          <Button asChild size="lg">
-            <Link href={`/${tenantSlug}/book`}>
-              Book an appointment
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </Button>
-          {profile.contactPhone && (
-            <Button asChild variant="secondary" size="lg">
-              <a href={`tel:${profile.contactPhone}`}>
-                <Phone className="h-4 w-4" />
-                Call us
-              </a>
-            </Button>
+      {/* HERO — soft brand-coloured backdrop frames the venue name without
+          competing with the tenant header. */}
+      <section className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-primary/[0.08] via-card to-accent/30 p-6 sm:p-10 fade-in">
+        <div
+          aria-hidden
+          className="absolute -top-24 -right-16 h-72 w-72 rounded-full bg-primary/10 blur-3xl"
+        />
+        <div className="relative space-y-4">
+          <Badge
+            variant="secondary"
+            className="uppercase tracking-wide text-[10px]"
+          >
+            {businessTypeLabel}
+          </Badge>
+          <h1 className="text-display sm:text-[3rem] sm:leading-[1.05] font-bold text-foreground max-w-2xl">
+            {profile.name}
+          </h1>
+          {profile.address && (
+            <p className="flex items-center gap-2 text-base text-muted-foreground">
+              <MapPin className="h-4 w-4 shrink-0" aria-hidden />
+              {profile.address}
+            </p>
           )}
+          <div className="flex flex-col sm:flex-row gap-2 pt-2">
+            <Button asChild size="lg">
+              <Link href={`/${tenantSlug}/book`}>
+                Book an appointment
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+            {profile.contactPhone && (
+              <Button asChild variant="secondary" size="lg">
+                <a href={`tel:${profile.contactPhone}`}>
+                  <Phone className="h-4 w-4" />
+                  Call us
+                </a>
+              </Button>
+            )}
+          </div>
         </div>
       </section>
 
@@ -102,7 +112,7 @@ export default async function StorefrontHome({ params }: Props) {
                     <div className="min-w-0 flex-1">
                       <p className="font-semibold text-foreground">{s.name}</p>
                       {s.description && (
-                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                        <p className="text-sm text-muted-foreground mt-1 line-clamp-3">
                           {s.description}
                         </p>
                       )}

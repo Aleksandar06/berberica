@@ -8,7 +8,7 @@ import { ApiError } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PageHeading } from "@/components/dashboard/page-heading";
+import { PageHeader } from "@/components/page-header";
 import { Spinner } from "@/components/ui/spinner";
 
 export default function CapacityPreviewPage() {
@@ -47,14 +47,14 @@ export default function CapacityPreviewPage() {
 
   return (
     <>
-      <PageHeading
+      <PageHeader
         title="Capacity preview"
         description="Shows how a day would look — both the storefront slot grid AND the actual packing capacity."
       />
 
       <form
         onSubmit={onSubmit}
-        className="rounded-lg border bg-white p-6 grid sm:grid-cols-5 gap-3 items-end"
+        className="rounded-2xl border border-border bg-card p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end"
       >
         <div>
           <Label htmlFor="staff">Staff</Label>
@@ -64,7 +64,7 @@ export default function CapacityPreviewPage() {
             onChange={(e) =>
               setForm({ ...form, staffMemberId: e.target.value })
             }
-            className="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+            className="block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             required
           >
             <option value="">Select…</option>
@@ -81,7 +81,7 @@ export default function CapacityPreviewPage() {
             id="service"
             value={form.serviceId}
             onChange={(e) => setForm({ ...form, serviceId: e.target.value })}
-            className="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+            className="block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             required
           >
             <option value="">Select…</option>
@@ -113,7 +113,7 @@ export default function CapacityPreviewPage() {
                 mode: e.target.value as "theoretical" | "real_day",
               })
             }
-            className="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+            className="block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
             <option value="theoretical">Theoretical</option>
             <option value="real_day">Real day</option>

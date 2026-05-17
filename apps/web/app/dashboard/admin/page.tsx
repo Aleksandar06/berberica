@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { adminApi } from "@/lib/api/admin";
 import { ApiError } from "@/lib/api/client";
-import { PageHeading } from "@/components/dashboard/page-heading";
+import { PageHeader } from "@/components/page-header";
 import { Spinner } from "@/components/ui/spinner";
 
 export default function AdminOverview() {
@@ -15,13 +15,13 @@ export default function AdminOverview() {
 
   return (
     <>
-      <PageHeading
+      <PageHeader
         title="Platform overview"
         description="Aggregates across every tenant on the platform."
       />
       {analytics.isLoading && <Spinner />}
       {analytics.error instanceof ApiError && (
-        <p className="text-sm text-red-700">
+        <p className="text-sm text-destructive">
           Could not load analytics: {analytics.error.message}
         </p>
       )}
@@ -58,10 +58,16 @@ function Stat({
   sub?: string;
 }) {
   return (
-    <div className="rounded-lg border bg-white p-4">
-      <p className="text-xs uppercase tracking-wider text-slate-500">{label}</p>
-      <p className="text-3xl font-semibold text-slate-900 mt-1">{value}</p>
-      {sub && <p className="text-xs text-slate-500 mt-1">{sub}</p>}
+    <div className="rounded-2xl border border-border bg-card p-4">
+      <p className="text-[11px] uppercase tracking-wide font-semibold text-muted-foreground">
+        {label}
+      </p>
+      <p className="text-3xl font-semibold text-foreground mt-1 tabular-nums">
+        {value}
+      </p>
+      {sub && (
+        <p className="text-xs text-muted-foreground mt-1 tabular-nums">{sub}</p>
+      )}
     </div>
   );
 }

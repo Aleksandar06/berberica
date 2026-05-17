@@ -44,6 +44,8 @@
     --success-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
     --warning-foreground: 30 30% 18%;
+    --info: 215 88% 55%;
+    --info-foreground: 0 0% 100%;
 
     /* Hairlines and focus */
     --border: 240 6% 90%;
@@ -80,6 +82,64 @@
   }
   .pt-safe {
     padding-top: max(env(safe-area-inset-top), 0px);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Motion — gated behind prefers-reduced-motion: no-preference.
+ *
+ * We previously declared the shimmer + accordion keyframes unconditionally,
+ * which violates WCAG 2.3.3 for users who set their OS to reduce motion.
+ * Wrapping the keyframes (and the .fade-in / .scale-in entrance utilities
+ * we use across the app) inside the no-preference media query collapses
+ * them to a single calm state for motion-averse users without any extra
+ * checks in component code.
+ * ------------------------------------------------------------------------- */
+
+@layer utilities {
+  .fade-in {
+    opacity: 1;
+  }
+  .scale-in {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @layer utilities {
+    .fade-in {
+      animation: fadeIn 220ms ease-out both;
+    }
+    .scale-in {
+      animation: scaleIn 240ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    }
+    .confetti-piece {
+      animation: confettiFall ease-out both;
+      animation-fill-mode: forwards;
+      opacity: 0.9;
+    }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  @keyframes confettiFall {
+    0%   { transform: translateY(-10px) rotate(0deg); opacity: 0; }
+    20%  { opacity: 0.9; }
+    100% { transform: translateY(140px) rotate(420deg); opacity: 0; }
+  }
+}
+
+/* Motion-averse fallback: hide confetti entirely so it doesn't sit as a
+   row of frozen dots at the top of the success card. */
+@media (prefers-reduced-motion: reduce) {
+  .confetti-piece {
+    display: none;
   }
 }
 

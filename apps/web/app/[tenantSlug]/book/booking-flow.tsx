@@ -69,6 +69,12 @@ interface Props {
   services: PublicService[];
   staff: PublicStaffMember[];
   preselectedServiceId?: string;
+  /**
+   * Deep-link staff selection — used by the customer dashboard's "Rebook"
+   * button to skip the staff picker and land directly on date/time.
+   * Falls back to "any available" when the staff id no longer exists.
+   */
+  preselectedStaffId?: string;
 }
 
 type Stage =
@@ -113,16 +119,34 @@ export function BookingFlow({
   services,
   staff,
   preselectedServiceId,
+  preselectedStaffId,
 }: Props) {
   const queryClient = useQueryClient();
   const initialService =
     services.find((s) => s.id === preselectedServiceId) ?? null;
+  // Honour the deep-linked staff only if (a) a service was pre-selected,
+  // (b) the staff still exists, and (c) they perform that service. Anything
+  // less and we fall through to the staff picker so the user can choose.
+  const initialStaffId =
+    initialService &&
+    preselectedStaffId &&
+    staff.some(
+      (s) =>
+        s.id === preselectedStaffId &&
+        s.serviceIds.includes(initialService.id),
+    )
+      ? preselectedStaffId
+      : ANY_STAFF_ID;
 
   const [stage, setStage] = useState<Stage>(
-    initialService ? "pick-staff" : "pick-service",
+    initialService
+      ? initialStaffId !== ANY_STAFF_ID
+        ? "pick-time"
+        : "pick-staff"
+      : "pick-service",
   );
   const [service, setService] = useState<PublicService | null>(initialService);
-  const [staffId, setStaffId] = useState<string>(ANY_STAFF_ID);
+  const [staffId, setStaffId] = useState<string>(initialStaffId);
   const [date, setDate] = useState<string>(() => todayInZone(tenantTimezone));
   const [selectedSlot, setSelectedSlot] =
     useState<PublicAvailabilitySlot | null>(null);
@@ -294,24 +318,26 @@ export function BookingFlow({
 
   return (
     <div className="space-y-5">
-      {/* Header: progress + back */}
-      <div className="space-y-3">
-        {progressIdx >= 0 && (
-          <StageProgress
-            steps={STAGES_FOR_PROGRESS.map((s) => STAGE_LABELS[s])}
-            current={progressIdx}
-          />
-        )}
+      {/* Header: back chevron (top-left, native iOS pattern) + progress */}
+      <div className="relative">
         {showBack && (
           <Button
             variant="ghost"
-            size="sm"
-            leadingIcon={<ChevronLeft />}
+            size="icon"
+            aria-label="Go back"
             onClick={goBack}
-            className="-ml-2"
+            className="absolute left-0 -top-1 z-10 h-9 w-9 -ml-2 sm:ml-0"
           >
-            Back
+            <ChevronLeft className="h-5 w-5" />
           </Button>
+        )}
+        {progressIdx >= 0 && (
+          <div className={cn(showBack && "pl-10 sm:pl-12")}>
+            <StageProgress
+              steps={STAGES_FOR_PROGRESS.map((s) => STAGE_LABELS[s])}
+              current={progressIdx}
+            />
+          </div>
         )}
       </div>
 
@@ -351,7 +377,7 @@ export function BookingFlow({
             setDate(d);
             setSelectedSlot(null);
           }}
-          loading={availability.isLoading}
+          loading={availability.isFetching}
           error={availability.error}
           slots={availability.data?.slots ?? []}
           selected={selectedSlot?.startUtc ?? null}
@@ -375,6 +401,7 @@ export function BookingFlow({
             startUtc={selectedSlot.startUtc}
             displayTime={selectedSlot.displayTime}
             timezone={tenantTimezone}
+            className="sticky top-16 z-10 bg-accent/95 backdrop-blur-sm shadow-sm"
           />
           <GuestDetailsForm
             initial={guestDetails}
@@ -405,6 +432,7 @@ export function BookingFlow({
             startUtc={selectedSlot.startUtc}
             displayTime={selectedSlot.displayTime}
             timezone={tenantTimezone}
+            className="sticky top-16 z-10 bg-accent/95 backdrop-blur-sm shadow-sm"
           />
           <OtpVerify
             email={guestDetails.email!}
@@ -468,7 +496,7 @@ function ServicePicker({
                 <div className="min-w-0">
                   <p className="font-semibold text-foreground">{s.name}</p>
                   {s.description && (
-                    <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                    <p className="text-sm text-muted-foreground mt-1 line-clamp-3">
                       {s.description}
                     </p>
                   )}
@@ -862,9 +890,22 @@ function OtpVerify({
       </div>
 
       {requestErrorMessage && (
-        <p className="text-center text-xs text-warning">
-          Couldn&apos;t send code: {requestErrorMessage}
-        </p>
+        <div className="rounded-xl border border-warning/40 bg-warning/10 p-3 text-center space-y-2">
+          <p className="text-xs text-[hsl(30_60%_28%)]">
+            Couldn&apos;t send code: {requestErrorMessage}
+          </p>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              if (!isRequesting) onResend();
+            }}
+            disabled={isRequesting}
+          >
+            {isRequesting ? "Trying again…" : "Try sending again"}
+          </Button>
+        </div>
       )}
 
       <div className="flex items-center justify-between gap-3 pt-1">
@@ -919,8 +960,9 @@ function ConfirmedScreen({
     .setLocale("en-US");
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-border bg-card p-6 sm:p-8 text-center space-y-4">
-        <div className="mx-auto h-16 w-16 rounded-full bg-success/10 grid place-items-center text-success">
+      <div className="relative rounded-2xl border border-border bg-card p-6 sm:p-8 text-center space-y-4 overflow-hidden">
+        <Confetti />
+        <div className="mx-auto h-16 w-16 rounded-full bg-success/10 grid place-items-center text-success scale-in">
           <CheckCircle2 className="h-9 w-9" strokeWidth={2.4} />
         </div>
         <div className="space-y-1">
@@ -978,4 +1020,49 @@ function ConfirmedScreen({
 
 function SectionTitle({ children }: { children: ReactNode }) {
   return <h2 className="text-h2 text-foreground">{children}</h2>;
+}
+
+/**
+ * Tiny confetti-burst for the confirmation screen. Pure CSS — no canvas, no
+ * deps. The whole shower respects `prefers-reduced-motion: reduce`: the
+ * animation keyframes are gated behind `no-preference` in globals.css via
+ * the `.confetti-piece` class, so motion-averse users see nothing.
+ */
+function Confetti() {
+  const colors = [
+    "hsl(var(--primary))",
+    "hsl(var(--success))",
+    "hsl(var(--warning))",
+    "hsl(var(--accent-foreground))",
+  ];
+  const pieces = Array.from({ length: 18 });
+  return (
+    <div
+      aria-hidden
+      className="pointer-events-none absolute inset-x-0 -top-2 flex justify-center"
+    >
+      {pieces.map((_, i) => {
+        const left = ((i * 37) % 95) + 2; // pseudo-random across the row
+        const delay = (i % 6) * 80;
+        const duration = 900 + ((i * 53) % 400);
+        const color = colors[i % colors.length];
+        const size = (i % 3) + 6;
+        return (
+          <span
+            key={i}
+            className="confetti-piece absolute block"
+            style={{
+              left: `${left}%`,
+              width: `${size}px`,
+              height: `${size + 2}px`,
+              background: color,
+              borderRadius: i % 2 === 0 ? "9999px" : "2px",
+              animationDelay: `${delay}ms`,
+              animationDuration: `${duration}ms`,
+            }}
+          />
+        );
+      })}
+    </div>
+  );
 }

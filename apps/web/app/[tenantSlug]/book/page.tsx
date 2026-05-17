@@ -11,10 +11,11 @@ export default async function BookPage({
   searchParams,
 }: {
   params: Promise<{ tenantSlug: string }>;
-  searchParams: Promise<{ serviceId?: string }>;
+  searchParams: Promise<{ serviceId?: string; staffId?: string }>;
 }) {
   const { tenantSlug } = await params;
-  const { serviceId: preselectedServiceId } = await searchParams;
+  const { serviceId: preselectedServiceId, staffId: preselectedStaffId } =
+    await searchParams;
   const [profile, services, staff] = await Promise.all([
     publicApi.getProfile(tenantSlug),
     publicApi.getServices(tenantSlug),
@@ -28,6 +29,7 @@ export default async function BookPage({
       services={services}
       staff={staff}
       preselectedServiceId={preselectedServiceId}
+      preselectedStaffId={preselectedStaffId}
     />
   );
 }

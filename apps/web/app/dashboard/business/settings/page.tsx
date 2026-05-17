@@ -34,14 +34,14 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { StickySaveBar } from "@/components/sticky-save-bar";
-import { PageHeading } from "@/components/dashboard/page-heading";
+import { PageHeader } from "@/components/page-header";
 import { errorMessage, useToast } from "@/lib/ui/toast";
 import { cn } from "@/lib/utils";
 
 export default function BusinessSettingsPage() {
   return (
     <>
-      <PageHeading
+      <PageHeader
         title="Settings"
         description="Business profile, booking policy, and brand colors."
       />

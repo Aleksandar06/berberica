@@ -21,7 +21,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { useConfirm } from "@/components/confirm-dialog";
 import { EmptyState } from "@/components/empty-state";
-import { PageHeading } from "@/components/dashboard/page-heading";
+import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 import { errorMessage, useToast } from "@/lib/ui/toast";
 
@@ -61,9 +61,33 @@ export default function BusinessStaffPage() {
 
   return (
     <>
-      <PageHeading
+      <PageHeader
         title="Staff"
-        description="Manage who can perform bookings and which services they do."
+        description={
+          staff.data
+            ? (() => {
+                const active = staff.data.filter((s) => s.isActive).length;
+                const inactive = staff.data.length - active;
+                return (
+                  <span className="tabular-nums">
+                    <strong className="text-foreground font-semibold">
+                      {active}
+                    </strong>{" "}
+                    active
+                    {inactive > 0 && (
+                      <>
+                        <span className="text-border mx-2">·</span>
+                        <strong className="text-foreground font-semibold">
+                          {inactive}
+                        </strong>{" "}
+                        inactive
+                      </>
+                    )}
+                  </span>
+                );
+              })()
+            : "Manage who can perform bookings."
+        }
         actions={
           <Button onClick={() => setCreating(true)} leadingIcon={<Plus />}>
             New staff
@@ -157,54 +181,83 @@ export default function BusinessStaffPage() {
 
       {/* DESKTOP: table */}
       {staff.data && staff.data.length > 0 && (
-        <div className="hidden md:block rounded-2xl border bg-card overflow-hidden">
+        <div className="hidden md:block rounded-2xl border border-border bg-card overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-muted/50 border-b border-border">
-              <tr>
-                <th className="text-left p-3 font-medium text-foreground">Name</th>
-                <th className="text-left p-3 font-medium text-foreground">Linked user</th>
-                <th className="text-left p-3 font-medium text-foreground">Status</th>
-                <th className="p-3" />
+            <thead>
+              <tr className="border-b border-border bg-muted/40">
+                <th className="text-left px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Name
+                </th>
+                <th className="text-left px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Linked user
+                </th>
+                <th className="text-left px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Status
+                </th>
+                <th className="px-4 py-2.5" />
               </tr>
             </thead>
             <tbody>
-              {staff.data.map((m) => (
-                <tr key={m.id} className="border-b border-border last:border-0">
-                  <td className="p-3 font-medium text-foreground">
-                    {m.displayName}
-                  </td>
-                  <td className="p-3 font-mono text-xs text-muted-foreground">
-                    {m.userId ?? "—"}
-                  </td>
-                  <td className="p-3">
-                    <StatusBadge
-                      status={m.isActive ? "active" : "inactive"}
-                      variant={m.isActive ? "success" : "neutral"}
-                    />
-                  </td>
-                  <td className="p-3 text-right">
-                    <div className="flex justify-end gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setAssigning(m.id)}
-                      >
-                        Services
-                      </Button>
-                      {m.isActive && (
+              {staff.data.map((m) => {
+                const initials =
+                  m.displayName
+                    .split(" ")
+                    .map((p) => p[0])
+                    .filter(Boolean)
+                    .slice(0, 2)
+                    .join("")
+                    .toUpperCase() || "?";
+                return (
+                  <tr
+                    key={m.id}
+                    className="group border-b border-border last:border-0 hover:bg-muted/30 transition-colors"
+                  >
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2.5">
+                        <span
+                          aria-hidden
+                          className="grid place-items-center h-8 w-8 shrink-0 rounded-full bg-primary/10 text-primary text-xs font-semibold"
+                        >
+                          {initials}
+                        </span>
+                        <span className="font-medium text-foreground">
+                          {m.displayName}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
+                      {m.userId ?? "—"}
+                    </td>
+                    <td className="px-4 py-3">
+                      <StatusBadge
+                        status={m.isActive ? "active" : "inactive"}
+                        variant={m.isActive ? "success" : "neutral"}
+                      />
+                    </td>
+                    <td className="px-4 py-3 text-right whitespace-nowrap">
+                      <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition">
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-destructive hover:bg-destructive/10"
-                          onClick={() => onDeactivate(m)}
+                          onClick={() => setAssigning(m.id)}
                         >
-                          Deactivate
+                          Services
                         </Button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                        {m.isActive && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                            onClick={() => onDeactivate(m)}
+                          >
+                            Deactivate
+                          </Button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

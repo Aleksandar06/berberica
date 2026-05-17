@@ -2,7 +2,8 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { DateTime } from "luxon";
-import { Calendar } from "lucide-react";
+import { Calendar, Repeat } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 
 import { customerApi, type CustomerBooking } from "@/lib/api/customer";
@@ -11,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useConfirm } from "@/components/confirm-dialog";
 import { EmptyState } from "@/components/empty-state";
-import { PageHeading } from "@/components/dashboard/page-heading";
+import { PageHeader } from "@/components/page-header";
 import { RescheduleSheet } from "@/components/reschedule-sheet";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 import { errorMessage, useToast } from "@/lib/ui/toast";
@@ -76,9 +77,32 @@ export default function CustomerBookingsPage() {
 
   return (
     <>
-      <PageHeading
+      <PageHeader
         title="My bookings"
-        description="Manage appointments you've booked across all venues."
+        description={
+          bookings.data
+            ? (() => {
+                const upc = upcoming.length;
+                const total = items.length;
+                if (total === 0) {
+                  return "Manage appointments you've booked across all venues.";
+                }
+                return (
+                  <span className="tabular-nums">
+                    <strong className="text-foreground font-semibold">
+                      {upc}
+                    </strong>{" "}
+                    upcoming
+                    <span className="text-border mx-2">·</span>
+                    <strong className="text-foreground font-semibold">
+                      {total - upc}
+                    </strong>{" "}
+                    past
+                  </span>
+                );
+              })()
+            : "Manage appointments you've booked across all venues."
+        }
       />
 
       {bookings.isLoading && (
@@ -128,7 +152,7 @@ export default function CustomerBookingsPage() {
           </h2>
           <div className="space-y-3">
             {past.map((b) => (
-              <BookingCard key={b.id} booking={b} />
+              <BookingCard key={b.id} booking={b} showRebook />
             ))}
           </div>
         </section>
@@ -166,19 +190,35 @@ function BookingCard({
   booking,
   onCancel,
   onReschedule,
+  showRebook = false,
 }: {
   booking: CustomerBooking;
   onCancel?: () => void;
   onReschedule?: () => void;
+  /** Show a "Rebook" deep-link — used on past/cancelled cards. */
+  showRebook?: boolean;
 }) {
   const tz = booking.tenant.timezone;
   const start = DateTime.fromISO(booking.startAt, { zone: "utc" }).setZone(tz);
   const end = DateTime.fromISO(booking.endAt, { zone: "utc" }).setZone(tz);
   const isModifiable =
     booking.status === "pending" || booking.status === "confirmed";
+  const initials =
+    `${booking.staffMember.displayName[0] ?? ""}`.toUpperCase() || "?";
+  // Deep link back to the booking flow with this service + staff pre-selected.
+  // Hits the existing query-param contract — no backend change.
+  const rebookHref = `/${booking.tenant.slug}/book?serviceId=${encodeURIComponent(
+    booking.service.id,
+  )}&staffId=${encodeURIComponent(booking.staffMemberId)}`;
 
   return (
     <div className="rounded-2xl border border-border bg-card p-4 flex flex-col sm:flex-row sm:items-center gap-4 shadow-sm transition hover:border-primary/30">
+      <span
+        aria-hidden
+        className="hidden sm:grid place-items-center h-10 w-10 shrink-0 rounded-full bg-primary/10 text-primary text-sm font-semibold"
+      >
+        {initials}
+      </span>
       <div className="flex-1 min-w-0 space-y-1">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="font-semibold text-foreground">{booking.service.name}</span>
@@ -193,25 +233,35 @@ function BookingCard({
           {booking.tenant.name} · with {booking.staffMember.displayName}
         </p>
       </div>
-      {(onCancel || onReschedule) && isModifiable && (
+      {((onCancel || onReschedule) && isModifiable) || showRebook ? (
         <div className="flex gap-1 sm:flex-shrink-0">
-          {onReschedule && (
+          {showRebook && (
+            <Button
+              asChild
+              variant="secondary"
+              size="sm"
+              leadingIcon={<Repeat className="h-3.5 w-3.5" />}
+            >
+              <Link href={rebookHref}>Rebook</Link>
+            </Button>
+          )}
+          {onReschedule && isModifiable && (
             <Button variant="ghost" size="sm" onClick={onReschedule}>
               Reschedule
             </Button>
           )}
-          {onCancel && (
+          {onCancel && isModifiable && (
             <Button
               variant="ghost"
               size="sm"
-              className="text-destructive hover:bg-destructive/10"
+              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
               onClick={onCancel}
             >
               Cancel
             </Button>
           )}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

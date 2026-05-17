@@ -57,6 +57,10 @@ const config: Config = {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
         },
+        info: {
+          DEFAULT: "hsl(var(--info))",
+          foreground: "hsl(var(--info-foreground))",
+        },
         popover: {
           DEFAULT: "hsl(var(--popover))",
           foreground: "hsl(var(--popover-foreground))",
@@ -80,6 +84,13 @@ const config: Config = {
         "h1": ["1.75rem", { lineHeight: "2.125rem", letterSpacing: "-0.02em", fontWeight: "600" }],
         "h2": ["1.375rem", { lineHeight: "1.75rem", letterSpacing: "-0.015em", fontWeight: "600" }],
         "h3": ["1.125rem", { lineHeight: "1.5rem", fontWeight: "600" }],
+        // Body + label scales — fills the gap below h3. Hand-rolled text-sm/
+        // text-base were scattered everywhere; these named tokens give us
+        // consistent line-height and feature settings.
+        "body": ["0.9375rem", { lineHeight: "1.55" }],
+        "body-sm": ["0.8125rem", { lineHeight: "1.5" }],
+        "label": ["0.75rem", { lineHeight: "1.2", letterSpacing: "0.08em", fontWeight: "600", textTransform: "uppercase" } as never],
+        "caption": ["0.6875rem", { lineHeight: "1.4" }],
       },
       boxShadow: {
         "sm": "0 1px 2px 0 hsl(var(--foreground) / 0.04)",

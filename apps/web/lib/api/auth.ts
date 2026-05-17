@@ -107,3 +107,29 @@ export async function resendVerification(email: string): Promise<void> {
     body: JSON.stringify({ email }),
   });
 }
+
+/**
+ * Consume the email-verification token sent in the Resend notification.
+ *
+ * The endpoint is anti-enumeration: it always returns 200 with `{ ok: true }`
+ * regardless of whether the token matched. A successful match flips the
+ * user's `emailVerified` flag; the landing page detects this by calling
+ * `/api/auth/me` afterwards if the user is authenticated.
+ */
+export async function verifyEmail(token: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/api/auth/verify-email`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token }),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    const parsed = text ? JSON.parse(text) : null;
+    throw new ApiError(
+      res.status,
+      parsed?.error?.code ?? "VERIFY_FAILED",
+      parsed?.error?.message ?? "Verification failed",
+    );
+  }
+}

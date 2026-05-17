@@ -6,6 +6,12 @@ import { cn } from "@/lib/utils";
 export interface EmptyStateProps {
   /** Lucide icon component (e.g. `Calendar`, `Users`). Renders in a soft circular tile. */
   icon?: LucideIcon;
+  /**
+   * Optional richer illustration that sits above the icon tile — use it for
+   * marquee empty states (no bookings yet, first-time onboarding) where a
+   * single glyph is too plain. Plain icon tile remains the default.
+   */
+  illustration?: ReactNode;
   title: string;
   description?: ReactNode;
   /** Primary action (typically a Button or Link). */
@@ -19,6 +25,7 @@ export interface EmptyStateProps {
  */
 export function EmptyState({
   icon: Icon,
+  illustration,
   title,
   description,
   action,
@@ -31,6 +38,11 @@ export function EmptyState({
         className,
       )}
     >
+      {illustration && (
+        <div className="max-w-[16rem]" aria-hidden>
+          {illustration}
+        </div>
+      )}
       {Icon && (
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
           <Icon className="h-6 w-6" aria-hidden />

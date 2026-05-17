@@ -7,7 +7,7 @@ import { businessApi } from "@/lib/api/business";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PageHeading } from "@/components/dashboard/page-heading";
+import { PageHeader } from "@/components/page-header";
 import { Spinner } from "@/components/ui/spinner";
 import { useConfirm } from "@/components/confirm-dialog";
 import { errorMessage, useToast } from "@/lib/ui/toast";
@@ -100,9 +100,26 @@ export default function AvailabilityPage() {
 
   return (
     <>
-      <PageHeading
+      <PageHeader
         title="Availability"
-        description="Weekly hours, recurring breaks, and date-specific exceptions. Staff-specific entries override tenant-wide for hours, and combine for breaks."
+        description={
+          <span className="tabular-nums">
+            <strong className="text-foreground font-semibold">
+              {aggregate.data.rules.length}
+            </strong>{" "}
+            rules
+            <span className="text-border mx-2">·</span>
+            <strong className="text-foreground font-semibold">
+              {aggregate.data.breaks.length}
+            </strong>{" "}
+            breaks
+            <span className="text-border mx-2">·</span>
+            <strong className="text-foreground font-semibold">
+              {aggregate.data.exceptions.length}
+            </strong>{" "}
+            exceptions
+          </span>
+        }
       />
 
       <Section title="Weekly working hours">
@@ -199,7 +216,7 @@ function Section({
 }) {
   return (
     <section className="space-y-3">
-      <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
+      <h2 className="text-lg font-semibold text-foreground">{title}</h2>
       {children}
     </section>
   );
@@ -290,7 +307,7 @@ function RuleForm({
           isActive: true,
         });
       }}
-      className="rounded-lg border bg-white p-4 grid sm:grid-cols-[1fr_1fr_1fr_1fr_auto] gap-3 items-end"
+      className="rounded-2xl border border-border bg-card p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_1fr_auto] gap-3 items-end"
     >
       <div>
         <Label htmlFor="dow-rule">Day</Label>
@@ -298,7 +315,7 @@ function RuleForm({
           id="dow-rule"
           value={dayOfWeek}
           onChange={(e) => setDow(Number(e.target.value))}
-          className="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+          className="block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           {DAYS.map((d, i) => (
             <option key={d} value={i}>
@@ -331,7 +348,7 @@ function RuleForm({
           id="rstaff"
           value={staffMemberId}
           onChange={(e) => setStaff(e.target.value)}
-          className="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+          className="block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           <option value="">Tenant-wide</option>
           {staff.map((s) => (
@@ -379,7 +396,7 @@ function BreakForm({
           isActive: true,
         });
       }}
-      className="rounded-lg border bg-white p-4 grid sm:grid-cols-[1fr_1fr_1fr_1fr_auto] gap-3 items-end"
+      className="rounded-2xl border border-border bg-card p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_1fr_auto] gap-3 items-end"
     >
       <div>
         <Label htmlFor="dow-br">Day</Label>
@@ -387,7 +404,7 @@ function BreakForm({
           id="dow-br"
           value={dayOfWeek}
           onChange={(e) => setDow(Number(e.target.value))}
-          className="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+          className="block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           {DAYS.map((d, i) => (
             <option key={d} value={i}>
@@ -420,7 +437,7 @@ function BreakForm({
           id="bstaff"
           value={staffMemberId}
           onChange={(e) => setStaff(e.target.value)}
-          className="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+          className="block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           <option value="">Tenant-wide</option>
           {staff.map((s) => (
@@ -472,7 +489,7 @@ function ExceptionForm({
           reason: reason || null,
         });
       }}
-      className="rounded-lg border bg-white p-4 space-y-3"
+      className="rounded-2xl border border-border bg-card p-4 space-y-3"
     >
       <div className="grid sm:grid-cols-3 gap-3">
         <div>
@@ -491,7 +508,7 @@ function ExceptionForm({
             id="exStaff"
             value={staffMemberId}
             onChange={(e) => setStaff(e.target.value)}
-            className="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+            className="block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
             <option value="">Tenant-wide</option>
             {staff.map((s) => (

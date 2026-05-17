@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/empty-state";
-import { PageHeading } from "@/components/dashboard/page-heading";
+import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 
 export default function AdminTenantsList() {
@@ -39,9 +39,23 @@ export default function AdminTenantsList() {
 
   return (
     <>
-      <PageHeading
+      <PageHeader
         title="Tenants"
-        description="Every business on the platform."
+        description={
+          data?.pagination
+            ? (() => {
+                const total = data.pagination.total;
+                return (
+                  <span className="tabular-nums">
+                    <strong className="text-foreground font-semibold">
+                      {total}
+                    </strong>{" "}
+                    {total === 1 ? "tenant" : "tenants"} on the platform
+                  </span>
+                );
+              })()
+            : "Every business on the platform."
+        }
         actions={
           <Button asChild leadingIcon={<Plus />}>
             <Link href="/dashboard/admin/tenants/new">New tenant</Link>

@@ -19,7 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useConfirm } from "@/components/confirm-dialog";
 import { EmptyState } from "@/components/empty-state";
-import { PageHeading } from "@/components/dashboard/page-heading";
+import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 import { errorMessage, useToast } from "@/lib/ui/toast";
 
@@ -56,9 +56,33 @@ export default function BusinessServicesPage() {
 
   return (
     <>
-      <PageHeading
+      <PageHeader
         title="Services"
-        description="Active services are bookable on your storefront. Soft-deleted ones live on for booking history."
+        description={
+          services.data
+            ? (() => {
+                const active = services.data.filter((s) => s.isActive).length;
+                const inactive = services.data.length - active;
+                return (
+                  <span className="tabular-nums">
+                    <strong className="text-foreground font-semibold">
+                      {active}
+                    </strong>{" "}
+                    bookable
+                    {inactive > 0 && (
+                      <>
+                        <span className="text-border mx-2">·</span>
+                        <strong className="text-foreground font-semibold">
+                          {inactive}
+                        </strong>{" "}
+                        archived
+                      </>
+                    )}
+                  </span>
+                );
+              })()
+            : "Active services are bookable on your storefront."
+        }
         actions={
           <Button onClick={() => setCreating(true)} leadingIcon={<Plus />}>
             New service
@@ -138,44 +162,57 @@ export default function BusinessServicesPage() {
 
       {/* DESKTOP: table */}
       {services.data && services.data.length > 0 && (
-        <div className="hidden md:block rounded-2xl border bg-card overflow-hidden">
+        <div className="hidden md:block rounded-2xl border border-border bg-card overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-muted/50 border-b border-border">
-              <tr>
-                <th className="text-left p-3 font-medium text-foreground">Name</th>
-                <th className="text-left p-3 font-medium text-foreground">Duration</th>
-                <th className="text-left p-3 font-medium text-foreground">Buffers</th>
-                <th className="text-left p-3 font-medium text-foreground">Status</th>
-                <th className="p-3" />
+            <thead>
+              <tr className="border-b border-border bg-muted/40">
+                <th className="text-left px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Name
+                </th>
+                <th className="text-left px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Duration
+                </th>
+                <th className="text-left px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Buffers
+                </th>
+                <th className="text-left px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Status
+                </th>
+                <th className="px-4 py-2.5" />
               </tr>
             </thead>
             <tbody>
               {services.data.map((s) => (
-                <tr key={s.id} className="border-b border-border last:border-0">
-                  <td className="p-3">
+                <tr
+                  key={s.id}
+                  className="group border-b border-border last:border-0 hover:bg-muted/30 transition-colors"
+                >
+                  <td className="px-4 py-3 align-top">
                     <p className="font-medium text-foreground">{s.name}</p>
                     {s.description && (
-                      <p className="text-xs text-muted-foreground mt-0.5">
+                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2 max-w-xl">
                         {s.description}
                       </p>
                     )}
                   </td>
-                  <td className="p-3 tabular-nums">{s.durationMinutes} min</td>
-                  <td className="p-3 text-muted-foreground tabular-nums">
+                  <td className="px-4 py-3 tabular-nums align-top">
+                    {s.durationMinutes} min
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground tabular-nums align-top">
                     {s.bufferBeforeMinutes}b · {s.bufferAfterMinutes}a
                   </td>
-                  <td className="p-3">
+                  <td className="px-4 py-3 align-top">
                     <StatusBadge
                       status={s.isActive ? "active" : "inactive"}
                       variant={s.isActive ? "success" : "neutral"}
                     />
                   </td>
-                  <td className="p-3 text-right">
+                  <td className="px-4 py-3 text-right whitespace-nowrap align-top">
                     {s.isActive && (
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-destructive hover:bg-destructive/10"
+                        className="opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition text-destructive hover:bg-destructive/10 hover:text-destructive"
                         onClick={() => onDeactivate(s)}
                       >
                         Deactivate
