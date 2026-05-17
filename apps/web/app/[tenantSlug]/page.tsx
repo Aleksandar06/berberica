@@ -7,8 +7,9 @@ import {
   AvatarFallback,
 } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { EmptyState } from "@/components/empty-state";
+import { cn } from "@/lib/utils";
 
 interface Props {
   params: Promise<{ tenantSlug: string }>;
@@ -33,45 +34,63 @@ export default async function StorefrontHome({ params }: Props) {
 
   return (
     <div className="space-y-10 sm:space-y-14">
-      {/* HERO — soft brand-coloured backdrop frames the venue name without
-          competing with the tenant header. */}
-      <section className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-primary/[0.08] via-card to-accent/30 p-6 sm:p-10 fade-in">
+      {/* HERO — soft brand-coloured backdrop, two-column on desktop with
+          the embedded location map on the right. The left column carries
+          the badge/title/address/CTAs; the right column shows the venue on
+          a Google Maps iframe so a first-time customer can see exactly
+          where they're booking before they tap. */}
+      <section className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-primary/[0.08] via-card to-accent/30 fade-in">
         <div
           aria-hidden
           className="absolute -top-24 -right-16 h-72 w-72 rounded-full bg-primary/10 blur-3xl"
         />
-        <div className="relative space-y-4">
-          <Badge
-            variant="secondary"
-            className="uppercase tracking-wide text-[10px]"
-          >
-            {businessTypeLabel}
-          </Badge>
-          <h1 className="text-display sm:text-[3rem] sm:leading-[1.05] font-bold text-foreground max-w-2xl">
-            {profile.name}
-          </h1>
-          {profile.address && (
-            <p className="flex items-center gap-2 text-base text-muted-foreground">
-              <MapPin className="h-4 w-4 shrink-0" aria-hidden />
-              {profile.address}
-            </p>
-          )}
-          <div className="flex flex-col sm:flex-row gap-2 pt-2">
-            <Button asChild size="lg">
-              <Link href={`/${tenantSlug}/book`}>
+        <div className="relative grid gap-6 p-6 sm:p-10 lg:grid-cols-[1fr_minmax(14rem,17rem)] lg:items-center lg:gap-10">
+          <div className="space-y-4">
+            <Badge
+              variant="secondary"
+              className="uppercase tracking-wide text-[10px]"
+            >
+              {businessTypeLabel}
+            </Badge>
+            <h1 className="text-display sm:text-[3rem] sm:leading-[1.05] font-bold text-foreground max-w-2xl">
+              {profile.name}
+            </h1>
+            {profile.address && (
+              <p className="flex items-center gap-2 text-base text-muted-foreground">
+                <MapPin className="h-4 w-4 shrink-0" aria-hidden />
+                {profile.address}
+              </p>
+            )}
+            {/* CTAs — we apply buttonVariants directly to the anchors rather
+                than wrapping in <Button asChild>. The Slot-based asChild
+                pattern silently drops className through next/link in this
+                project, so anchor styling never landed. Direct className keeps
+                the design system intact (same tokens, same sizing) without
+                the prop-merging hazard. */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 pt-3">
+              <Link
+                href={`/${tenantSlug}/book`}
+                className={cn(
+                  buttonVariants({ variant: "default", size: "lg" }),
+                  "shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5",
+                )}
+              >
                 Book an appointment
                 <ArrowRight className="h-4 w-4" />
               </Link>
-            </Button>
-            {profile.contactPhone && (
-              <Button asChild variant="secondary" size="lg">
-                <a href={`tel:${profile.contactPhone}`}>
+              {profile.contactPhone && (
+                <a
+                  href={`tel:${profile.contactPhone}`}
+                  className={buttonVariants({ variant: "ghost", size: "lg" })}
+                >
                   <Phone className="h-4 w-4" />
                   Call us
                 </a>
-              </Button>
-            )}
+              )}
+            </div>
           </div>
+
+          {profile.address && <LocationMap address={profile.address} name={profile.name} />}
         </div>
       </section>
 
@@ -221,6 +240,48 @@ function InfoRow({
         {label}
       </dt>
       <dd className="text-foreground">{value}</dd>
+    </div>
+  );
+}
+
+/**
+ * Embedded Google Maps view of the venue address. Uses the keyless
+ * `maps.google.com/maps?q=…&output=embed` endpoint so we don't have to
+ * manage an API key for the hackathon.
+ *
+ * Query is the address-only (not the business name) so Google geocodes
+ * to the exact street pin instead of trying to match a business in its
+ * index — that match was unreliable for fresh tenants. The "Get
+ * directions" link below still carries the business name as the
+ * destination label so the user's Maps app shows a familiar title.
+ */
+function LocationMap({ address, name }: { address: string; name: string }) {
+  const addressQuery = encodeURIComponent(address);
+  const embedSrc = `https://maps.google.com/maps?q=${addressQuery}&z=16&output=embed`;
+  const directionsHref = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
+    `${name}, ${address}`,
+  )}`;
+  return (
+    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+      <iframe
+        title={`Map showing the location of ${name}`}
+        src={embedSrc}
+        loading="lazy"
+        referrerPolicy="no-referrer-when-downgrade"
+        className="block w-full aspect-[5/3] border-0"
+      />
+      <a
+        href={directionsHref}
+        target="_blank"
+        rel="noreferrer noopener"
+        className="flex items-center justify-between gap-2 px-3 py-2 text-xs font-medium text-foreground border-t border-border hover:bg-muted transition"
+      >
+        <span className="inline-flex items-center gap-1.5">
+          <MapPin className="h-3.5 w-3.5 text-primary" aria-hidden />
+          Get directions
+        </span>
+        <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
+      </a>
     </div>
   );
 }

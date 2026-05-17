@@ -2,6 +2,8 @@ import { CalendarCheck, ShieldCheck, Sparkles } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { LogoMark } from "@/components/brand/logo";
+
 /**
  * Two-pane shell for auth screens. On desktop the left pane is a
  * branded gradient panel with the platform identity + a few trust
@@ -37,9 +39,7 @@ export function AuthLayout({ children }: { children: ReactNode }) {
           href="/"
           className="relative inline-flex items-center gap-2.5 text-base font-semibold w-fit"
         >
-          <span className="h-9 w-9 rounded-xl bg-primary-foreground/15 grid place-items-center text-base font-bold">
-            B
-          </span>
+          <LogoMark tone="tinted" className="h-9 w-9" />
           Berberica
         </Link>
 

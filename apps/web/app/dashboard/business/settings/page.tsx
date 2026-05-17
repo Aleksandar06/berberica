@@ -2,9 +2,14 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { ImagePlus, Upload, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { z } from "zod";
+import {
+  ALLOWED_LOGO_MIME_TYPES,
+  MAX_LOGO_BYTES,
+} from "@scheduling/schemas";
 
 import { businessApi } from "@/lib/api/business";
 import { Button } from "@/components/ui/button";
@@ -509,7 +514,17 @@ const colorHex = z
   .string()
   .regex(/^#[0-9a-fA-F]{6}$/i, "Hex color like #112233 required");
 const brandingSchema = z.object({
-  logoUrl: z.string().url("Must be a URL").or(z.literal("")),
+  // Accepts an http(s) URL OR a data:image base64 URL produced by the
+  // file picker. Empty string clears the logo on save.
+  logoUrl: z
+    .string()
+    .refine(
+      (v) =>
+        v === "" ||
+        v.startsWith("data:image/") ||
+        /^https?:\/\//i.test(v),
+      "Must be an http(s) URL or an uploaded image",
+    ),
   primaryColor: colorHex,
   secondaryColor: colorHex,
   accentColor: colorHex,
@@ -586,17 +601,18 @@ function BrandingTab() {
               name="logoUrl"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Logo URL</FormLabel>
+                  <FormLabel>Logo</FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder="https://…"
-                      value={field.value ?? ""}
+                    <LogoUploader
+                      value={field.value}
                       onChange={field.onChange}
                     />
                   </FormControl>
                   <FormDescription>
-                    Direct file upload lands in a future release. For now,
-                    paste a public image URL.
+                    PNG, JPEG, WEBP or SVG ·{" "}
+                    {Math.floor(MAX_LOGO_BYTES / 1024 / 1024)} MB max. Shows
+                    next to your name in the storefront and confirmation
+                    emails.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -839,6 +855,179 @@ function SettingsSkeleton() {
         <Skeleton className="h-11 w-full" />
         <Skeleton className="h-11 w-full" />
       </div>
+    </div>
+  );
+}
+
+/**
+ * Logo picker — accepts either a file drop / browse, or a pasted URL.
+ *
+ * Uploaded files are base64-encoded as `data:image/<type>;base64,...` and
+ * stored directly in the existing `logo_url` text column (see the matching
+ * server-side change in `packages/schemas/src/tenant.ts`). This keeps the
+ * hackathon scope tight — no S3/MinIO/Supabase Storage wiring required —
+ * while preserving the same API surface so a future S3 migration only
+ * swaps the data: URL for an https URL transparently.
+ *
+ * The component is uncontrolled-ish: it owns no logo state of its own;
+ * `value`/`onChange` are wired to the parent's react-hook-form field so
+ * the StickySaveBar dirty-check, validation, and discard all work.
+ */
+function LogoUploader({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [readingError, setReadingError] = useState<string | null>(null);
+  const [reading, setReading] = useState(false);
+
+  // A logo is "uploaded" if it's a data: URL — meaning the user picked a
+  // file. http(s) URLs are treated as external and surface the URL input.
+  const isDataUrl = value.startsWith("data:");
+  const hasValue = value.length > 0;
+
+  function handleFiles(files: FileList | null) {
+    setReadingError(null);
+    const file = files?.[0];
+    if (!file) return;
+    const allowed = ALLOWED_LOGO_MIME_TYPES as readonly string[];
+    if (!allowed.includes(file.type)) {
+      setReadingError(
+        `Unsupported file type. Use ${ALLOWED_LOGO_MIME_TYPES.join(", ")}.`,
+      );
+      return;
+    }
+    if (file.size > MAX_LOGO_BYTES) {
+      setReadingError(
+        `Image is too large — ${(file.size / 1024 / 1024).toFixed(1)} MB > ${MAX_LOGO_BYTES / 1024 / 1024} MB cap.`,
+      );
+      return;
+    }
+    setReading(true);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = typeof reader.result === "string" ? reader.result : "";
+      onChange(result);
+      setReading(false);
+    };
+    reader.onerror = () => {
+      setReadingError("Couldn't read that file. Try a different one.");
+      setReading(false);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function clear() {
+    onChange("");
+    setReadingError(null);
+    if (inputRef.current) inputRef.current.value = "";
+  }
+
+  return (
+    <div className="space-y-3">
+      <div
+        onDragOver={(e) => {
+          e.preventDefault();
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          handleFiles(e.dataTransfer.files);
+        }}
+        className={cn(
+          "relative flex items-center gap-4 rounded-2xl border-2 border-dashed border-border bg-muted/30 p-4 transition",
+          "hover:border-primary/40 hover:bg-muted/50",
+        )}
+      >
+        <div className="grid place-items-center h-16 w-16 shrink-0 rounded-xl bg-card border border-border overflow-hidden">
+          {hasValue ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={value}
+              alt="Current logo"
+              className="h-full w-full object-contain"
+            />
+          ) : (
+            <ImagePlus
+              className="h-6 w-6 text-muted-foreground"
+              aria-hidden
+            />
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium text-foreground">
+            {hasValue
+              ? isDataUrl
+                ? "Uploaded image"
+                : "External URL"
+              : "No logo yet"}
+          </p>
+          <p className="text-xs text-muted-foreground truncate">
+            {hasValue
+              ? isDataUrl
+                ? "Saved with your branding when you hit Save."
+                : value
+              : "Drop an image here or browse below."}
+          </p>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            leadingIcon={<Upload className="h-3.5 w-3.5" />}
+            onClick={() => inputRef.current?.click()}
+            disabled={reading}
+          >
+            {reading
+              ? "Reading…"
+              : hasValue
+                ? "Replace"
+                : "Upload"}
+          </Button>
+          {hasValue && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+              leadingIcon={<X className="h-3.5 w-3.5" />}
+              onClick={clear}
+            >
+              Remove
+            </Button>
+          )}
+        </div>
+        <input
+          ref={inputRef}
+          type="file"
+          accept={ALLOWED_LOGO_MIME_TYPES.join(",")}
+          className="sr-only"
+          onChange={(e) => handleFiles(e.target.files)}
+        />
+      </div>
+
+      {readingError && (
+        <p className="text-xs text-destructive" role="alert">
+          {readingError}
+        </p>
+      )}
+
+      {/* Advanced fallback: paste a hosted URL instead of uploading. Kept
+          visible-but-quiet so the upload flow is the obvious primary path. */}
+      <details className="group">
+        <summary className="text-xs text-muted-foreground cursor-pointer select-none hover:text-foreground transition">
+          Or paste an image URL instead
+        </summary>
+        <Input
+          className="mt-2"
+          placeholder="https://example.com/logo.png"
+          value={isDataUrl ? "" : value}
+          onChange={(e) => onChange(e.target.value)}
+        />
+      </details>
     </div>
   );
 }

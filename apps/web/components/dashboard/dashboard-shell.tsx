@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 
 import { useAuth } from "@/lib/auth/auth-context";
+import { LogoMark } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -105,12 +106,7 @@ export function DashboardShell({ title, nav, children }: ShellProps) {
             href="/dashboard"
             className="flex items-center gap-2 min-w-0 group"
           >
-            <span
-              aria-hidden
-              className="h-7 w-7 rounded-lg bg-primary text-primary-foreground grid place-items-center text-sm font-bold shrink-0"
-            >
-              B
-            </span>
+            <LogoMark />
             <span className="font-semibold text-foreground truncate">
               Berberica
             </span>
@@ -213,12 +209,7 @@ export function DashboardShell({ title, nav, children }: ShellProps) {
         <SheetContent side="left" className="w-72 p-0 flex flex-col">
           <SheetHeader className="p-6 pb-3 mb-0">
             <SheetTitle className="flex items-center gap-2">
-              <span
-                aria-hidden
-                className="h-7 w-7 rounded-lg bg-primary text-primary-foreground grid place-items-center text-sm font-bold"
-              >
-                B
-              </span>
+              <LogoMark />
               Berberica
             </SheetTitle>
             <SheetDescription>{title}</SheetDescription>

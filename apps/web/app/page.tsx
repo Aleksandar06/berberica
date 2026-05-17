@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+import { LogoMark } from "@/components/brand/logo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -178,12 +179,7 @@ function SiteHeader() {
     <header className="border-b border-border bg-background/95 backdrop-blur sticky top-0 z-30">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 font-semibold text-foreground">
-          <span
-            aria-hidden
-            className="h-7 w-7 rounded-lg bg-primary text-primary-foreground grid place-items-center text-sm font-bold"
-          >
-            B
-          </span>
+          <LogoMark />
           Berberica
         </Link>
         <nav className="flex items-center gap-1 sm:gap-2">
