@@ -203,7 +203,7 @@ export default function BusinessOverview() {
             <section className="space-y-3">
               <div className="flex items-center justify-between px-1">
                 <h2 className="text-[11px] uppercase tracking-wide font-semibold text-muted-foreground">
-                  Today's schedule
+                  Today&apos;s schedule
                 </h2>
                 <span className="text-[11px] text-muted-foreground tabular-nums">
                   {items.length} {items.length === 1 ? "booking" : "bookings"}

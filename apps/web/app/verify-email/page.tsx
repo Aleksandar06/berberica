@@ -108,7 +108,7 @@ function SuccessState() {
           <CheckCircle2 className="h-7 w-7" aria-hidden />
         </div>
         <div className="space-y-1">
-          <h1 className="text-h1 text-foreground">You're all set</h1>
+          <h1 className="text-h1 text-foreground">You&apos;re all set</h1>
           <p className="text-sm text-muted-foreground max-w-xs mx-auto">
             Your email is verified. You can now book appointments and manage
             your account.
@@ -142,7 +142,7 @@ function ErrorState({ message }: { message: string | null }) {
           <MailWarning className="h-7 w-7" aria-hidden />
         </div>
         <div className="space-y-1">
-          <h1 className="text-h1 text-foreground">Link can't be used</h1>
+          <h1 className="text-h1 text-foreground">Link can&apos;t be used</h1>
           <p className="text-sm text-muted-foreground max-w-xs mx-auto">
             {message ?? "This verification link is invalid or has expired."}
           </p>

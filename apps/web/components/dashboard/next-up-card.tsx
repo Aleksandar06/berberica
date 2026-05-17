@@ -66,7 +66,7 @@ export function NextUpCard({
         <div className="mt-5 flex items-center gap-3 rounded-xl bg-success/10 px-4 py-3 text-success">
           <CheckCircle2 className="h-5 w-5 shrink-0" aria-hidden />
           <p className="text-sm font-medium text-foreground">
-            You're clear for now. Nothing booked in the next hours.
+            You&apos;re clear for now. Nothing booked in the next hours.
           </p>
         </div>
       </section>
