@@ -1,3 +1,5 @@
+"use client";
+
 import {
   ArrowRight,
   CalendarCheck,
@@ -8,8 +10,10 @@ import {
 import Link from "next/link";
 
 import { LogoMark } from "@/components/brand/logo";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useT } from "@/lib/i18n/language-context";
 
 interface FeaturedTenant {
   slug: string;
@@ -40,6 +44,7 @@ const FEATURED: FeaturedTenant[] = [
  * CTA to register a business, and a global footer.
  */
 export default function HomePage() {
+  const { t } = useT();
   return (
     <main className="min-h-screen bg-background">
       <SiteHeader />
@@ -57,24 +62,23 @@ export default function HomePage() {
         <div className="relative max-w-5xl mx-auto px-4 sm:px-6 pt-20 sm:pt-28 pb-16 sm:pb-24 text-center">
           <Badge variant="secondary" className="mb-5">
             <Sparkles className="h-3 w-3 mr-1" />
-            Booking for beauty, wellness & barbershops
+            {t.landing.eyebrow}
           </Badge>
           <h1 className="text-display sm:text-[3.5rem] sm:leading-[1.05] font-bold text-foreground tracking-tight max-w-3xl mx-auto">
-            Bookings without the back-and-forth.
+            {t.landing.title}
           </h1>
           <p className="text-lg sm:text-xl text-muted-foreground mt-5 max-w-2xl mx-auto">
-            One platform for booking your favourite venues — and a clean,
-            fast dashboard for the businesses behind them.
+            {t.landing.subtitle}
           </p>
           <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
             <Button asChild size="lg">
               <Link href="#venues">
-                Find a business
+                {t.landing.findBusiness}
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
             <Button asChild variant="secondary" size="lg">
-              <Link href="/dashboard/login">For business owners</Link>
+              <Link href="/dashboard/login">{t.landing.forBusinessOwners}</Link>
             </Button>
           </div>
         </div>
@@ -85,18 +89,18 @@ export default function HomePage() {
         <div className="grid sm:grid-cols-3 gap-4 sm:gap-6">
           <Feature
             icon={CalendarCheck}
-            title="Real-time availability"
-            body="Tap a time, lock it in. No double-bookings, no waiting for someone to confirm."
+            title={t.landing.feature1Title}
+            body={t.landing.feature1Body}
           />
           <Feature
             icon={ShieldCheck}
-            title="Verified everywhere"
-            body="Email verification, role-based access, and per-tenant data isolation on every account."
+            title={t.landing.feature2Title}
+            body={t.landing.feature2Body}
           />
           <Feature
             icon={Clock}
-            title="Built for mobile"
-            body="The booking flow looks like a native app and works in your thumb-reach band — even on a 4-inch screen."
+            title={t.landing.feature3Title}
+            body={t.landing.feature3Body}
           />
         </div>
       </section>
@@ -107,9 +111,9 @@ export default function HomePage() {
         className="max-w-5xl mx-auto px-4 sm:px-6 py-12 sm:py-16 space-y-6"
       >
         <div className="space-y-2 text-center">
-          <h2 className="text-h1 text-foreground">Featured venues</h2>
+          <h2 className="text-h1 text-foreground">{t.landing.featuredHeading}</h2>
           <p className="text-muted-foreground">
-            Tap any venue to see their services and book.
+            {t.storefront.servicesSubtitle}
           </p>
         </div>
         <ul className="grid sm:grid-cols-2 gap-3">
@@ -156,10 +160,10 @@ export default function HomePage() {
           </div>
           <div className="flex flex-col sm:flex-row gap-2 lg:justify-end">
             <Button asChild size="lg">
-              <Link href="/dashboard/register">Create an account</Link>
+              <Link href="/dashboard/register">{t.auth.createAccount}</Link>
             </Button>
             <Button asChild variant="secondary" size="lg">
-              <Link href="/dashboard/login">Sign in</Link>
+              <Link href="/dashboard/login">{t.landing.signIn}</Link>
             </Button>
           </div>
         </div>
@@ -175,6 +179,7 @@ export default function HomePage() {
 // ===========================================================================
 
 function SiteHeader() {
+  const { t } = useT();
   return (
     <header className="border-b border-border bg-background/95 backdrop-blur sticky top-0 z-30">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
@@ -187,11 +192,12 @@ function SiteHeader() {
             href="/dashboard/login"
             className="inline-flex h-10 px-3 items-center rounded-full text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition"
           >
-            Sign in
+            {t.landing.signIn}
           </Link>
           <Button asChild size="md">
-            <Link href="/dashboard/register">Get started</Link>
+            <Link href="/dashboard/register">{t.landing.getStarted}</Link>
           </Button>
+          <LanguageSwitcher />
         </nav>
       </div>
     </header>
@@ -219,16 +225,17 @@ function Feature({
 }
 
 function SiteFooter() {
+  const { t } = useT();
   return (
     <footer className="border-t border-border bg-background">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
-        <p>© {new Date().getFullYear()} Berberica — multi-tenant scheduling.</p>
+        <p>© {new Date().getFullYear()} {t.landing.footer}</p>
         <div className="flex items-center gap-4">
           <Link href="/dashboard/login" className="hover:text-foreground transition">
-            Sign in
+            {t.landing.signIn}
           </Link>
           <Link href="/dashboard/register" className="hover:text-foreground transition">
-            Create account
+            {t.auth.createAccount}
           </Link>
         </div>
       </div>

@@ -4,6 +4,7 @@ import { DateTime } from "luxon";
 import { useMemo } from "react";
 
 import type { PublicAvailabilitySlot } from "@/lib/api/types";
+import { useT } from "@/lib/i18n/language-context";
 import { cn } from "@/lib/utils";
 
 export interface SlotListProps {
@@ -26,6 +27,7 @@ export function SlotList({
   onSelect,
   timezone,
 }: SlotListProps) {
+  const { t } = useT();
   const groups = useMemo(() => {
     const morning: PublicAvailabilitySlot[] = [];
     const afternoon: PublicAvailabilitySlot[] = [];
@@ -44,13 +46,13 @@ export function SlotList({
   return (
     <div className="space-y-5">
       {groups.morning.length > 0 && (
-        <SlotGroup label="Morning" slots={groups.morning} selected={selected} onSelect={onSelect} />
+        <SlotGroup label={t.booking.morning} slots={groups.morning} selected={selected} onSelect={onSelect} />
       )}
       {groups.afternoon.length > 0 && (
-        <SlotGroup label="Afternoon" slots={groups.afternoon} selected={selected} onSelect={onSelect} />
+        <SlotGroup label={t.booking.afternoon} slots={groups.afternoon} selected={selected} onSelect={onSelect} />
       )}
       {groups.evening.length > 0 && (
-        <SlotGroup label="Evening" slots={groups.evening} selected={selected} onSelect={onSelect} />
+        <SlotGroup label={t.booking.evening} slots={groups.evening} selected={selected} onSelect={onSelect} />
       )}
     </div>
   );

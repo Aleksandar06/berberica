@@ -7,6 +7,7 @@ import { useEffect, useState, type ReactNode } from "react";
 
 import { useAuth } from "@/lib/auth/auth-context";
 import { LogoMark } from "@/components/brand/logo";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -130,6 +131,7 @@ export function DashboardShell({ title, nav, children }: ShellProps) {
             {title}
           </span>
 
+          <LanguageSwitcher />
           <UserMenu />
         </div>
       </header>

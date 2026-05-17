@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { EmptyState } from "@/components/empty-state";
 import { formatPrice } from "@/lib/format/money";
+import { getServerT } from "@/lib/i18n/server";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -24,7 +25,8 @@ interface Props {
  */
 export default async function StorefrontHome({ params }: Props) {
   const { tenantSlug } = await params;
-  const [profile, services, staff] = await Promise.all([
+  const [{ t }, profile, services, staff] = await Promise.all([
+    getServerT(),
     publicApi.getProfile(tenantSlug),
     publicApi.getServices(tenantSlug),
     publicApi.getStaff(tenantSlug),
@@ -76,7 +78,7 @@ export default async function StorefrontHome({ params }: Props) {
                   "shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5",
                 )}
               >
-                Book an appointment
+                {t.storefront.bookAppointment}
                 <ArrowRight className="h-4 w-4" />
               </Link>
               {profile.contactPhone && (
@@ -85,13 +87,19 @@ export default async function StorefrontHome({ params }: Props) {
                   className={buttonVariants({ variant: "ghost", size: "lg" })}
                 >
                   <Phone className="h-4 w-4" />
-                  Call us
+                  {t.storefront.callUs}
                 </a>
               )}
             </div>
           </div>
 
-          {profile.address && <LocationMap address={profile.address} name={profile.name} />}
+          {profile.address && (
+            <LocationMap
+              address={profile.address}
+              name={profile.name}
+              directionsLabel={t.storefront.getDirections}
+            />
+          )}
         </div>
       </section>
 
@@ -99,9 +107,10 @@ export default async function StorefrontHome({ params }: Props) {
       <section className="space-y-4">
         <div className="flex items-end justify-between gap-3">
           <div>
-            <h2 className="text-h2 text-foreground">Services</h2>
+            <h2 className="text-h2 text-foreground">{t.storefront.servicesHeading}</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              Tap a service to book it. Times are shown in {profile.timezone}.
+              {t.storefront.servicesSubtitle}{" "}
+              <span className="tabular-nums">({profile.timezone})</span>
             </p>
           </div>
           {services.length > 4 && (
@@ -109,7 +118,7 @@ export default async function StorefrontHome({ params }: Props) {
               href={`/${tenantSlug}/services`}
               className="hidden sm:inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
             >
-              See all <ArrowRight className="h-4 w-4" />
+              {t.storefront.seeAll} <ArrowRight className="h-4 w-4" />
             </Link>
           )}
         </div>
@@ -117,8 +126,8 @@ export default async function StorefrontHome({ params }: Props) {
         {services.length === 0 ? (
           <EmptyState
             icon={Scissors}
-            title="No services available yet"
-            description="This business hasn't published any bookable services."
+            title={t.storefront.noServices}
+            description={t.storefront.noServicesBody}
           />
         ) : (
           <ul className="space-y-2">
@@ -159,7 +168,7 @@ export default async function StorefrontHome({ params }: Props) {
       {/* STAFF */}
       {staff.length > 0 && (
         <section className="space-y-4">
-          <h2 className="text-h2 text-foreground">Meet the team</h2>
+          <h2 className="text-h2 text-foreground">{t.storefront.meetTheTeam}</h2>
           <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {staff.map((s) => {
               const initials =
@@ -194,15 +203,15 @@ export default async function StorefrontHome({ params }: Props) {
       <section className="rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-4">
         <div className="flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-primary" aria-hidden />
-          <h2 className="text-h3 text-foreground">About this venue</h2>
+          <h2 className="text-h3 text-foreground">{t.storefront.aboutHeading}</h2>
         </div>
         <dl className="grid sm:grid-cols-2 gap-4 text-sm">
           {profile.address && (
-            <InfoRow label="Address" value={profile.address} />
+            <InfoRow label={t.storefront.address} value={profile.address} />
           )}
           {profile.contactPhone && (
             <InfoRow
-              label="Phone"
+              label={t.storefront.phone}
               value={
                 <a
                   href={`tel:${profile.contactPhone}`}
@@ -215,7 +224,7 @@ export default async function StorefrontHome({ params }: Props) {
           )}
           {profile.contactEmail && (
             <InfoRow
-              label="Email"
+              label={t.storefront.emailLabel}
               value={
                 <a
                   href={`mailto:${profile.contactEmail}`}
@@ -226,7 +235,7 @@ export default async function StorefrontHome({ params }: Props) {
               }
             />
           )}
-          <InfoRow label="Timezone" value={profile.timezone} />
+          <InfoRow label={t.storefront.timezone} value={profile.timezone} />
         </dl>
       </section>
     </div>
@@ -261,7 +270,15 @@ function InfoRow({
  * directions" link below still carries the business name as the
  * destination label so the user's Maps app shows a familiar title.
  */
-function LocationMap({ address, name }: { address: string; name: string }) {
+function LocationMap({
+  address,
+  name,
+  directionsLabel,
+}: {
+  address: string;
+  name: string;
+  directionsLabel: string;
+}) {
   const addressQuery = encodeURIComponent(address);
   const embedSrc = `https://maps.google.com/maps?q=${addressQuery}&z=16&output=embed`;
   const directionsHref = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
@@ -284,7 +301,7 @@ function LocationMap({ address, name }: { address: string; name: string }) {
       >
         <span className="inline-flex items-center gap-1.5">
           <MapPin className="h-3.5 w-3.5 text-primary" aria-hidden />
-          Get directions
+          {directionsLabel}
         </span>
         <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
       </a>

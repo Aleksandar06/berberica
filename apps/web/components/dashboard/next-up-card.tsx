@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import type { BusinessBooking } from "@/lib/api/business";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/dashboard/status-badge";
+import { useT } from "@/lib/i18n/language-context";
 import { cn } from "@/lib/utils";
 
 export interface NextUpCardProps {
@@ -37,6 +38,7 @@ export function NextUpCard({
   onMark,
   marking,
 }: NextUpCardProps) {
+  const { t, locale } = useT();
   // Tick once every 30s — keeps relative-time labels accurate without
   // re-rendering constantly.
   const [now, setNow] = useState(() => DateTime.now().setZone(timezone));
@@ -73,22 +75,24 @@ export function NextUpCard({
     );
   }
 
-  const start = DateTime.fromISO(next.startAt, { zone: "utc" }).setZone(
-    timezone,
-  );
-  const end = DateTime.fromISO(next.endAt, { zone: "utc" }).setZone(timezone);
+  const start = DateTime.fromISO(next.startAt, { zone: "utc" })
+    .setZone(timezone)
+    .setLocale(locale);
+  const end = DateTime.fromISO(next.endAt, { zone: "utc" })
+    .setZone(timezone)
+    .setLocale(locale);
   const inProgress = now >= start && now < end;
   const minsAway = Math.round(start.diff(now, "minutes").minutes);
   const relative =
     inProgress
-      ? "in progress now"
+      ? t.today.inProgressNow
       : minsAway <= 0
-        ? "starting now"
+        ? t.today.startingNow
         : minsAway < 60
-          ? `in ${minsAway} min`
+          ? t.today.inMinutes(minsAway)
           : minsAway < 120
-            ? "in about an hour"
-            : start.toFormat("'at' HH:mm");
+            ? t.today.inAboutAnHour
+            : t.today.atTime(start.toFormat("HH:mm"));
 
   const initials =
     `${next.customer.firstName[0] ?? ""}${next.customer.lastName[0] ?? ""}`.toUpperCase();
@@ -117,7 +121,7 @@ export function NextUpCard({
         <div className="min-w-0 flex-1 space-y-1">
           <div className="flex items-baseline gap-2 flex-wrap">
             <span className="text-[11px] uppercase tracking-wide font-semibold text-muted-foreground">
-              Next up
+              {t.today.nextUpLabel}
             </span>
             <span className="text-xs font-medium text-foreground tabular-nums">
               {relative}
@@ -127,11 +131,11 @@ export function NextUpCard({
             {next.customer.firstName} {next.customer.lastName}
           </p>
           <p className="text-sm text-muted-foreground truncate">
-            {next.service.name} · with {next.staffMember.displayName}
+            {next.service.name} · {next.staffMember.displayName}
           </p>
           <p className="text-xs text-muted-foreground tabular-nums">
             {start.toFormat("HH:mm")}–{end.toFormat("HH:mm")} ·{" "}
-            {end.diff(start, "minutes").minutes} min
+            {end.diff(start, "minutes").minutes} {t.common.min}
           </p>
         </div>
         <div className="hidden sm:block">
@@ -146,7 +150,7 @@ export function NextUpCard({
           disabled={marking || next.status === "confirmed"}
           leadingIcon={<CheckCircle2 className="h-4 w-4" />}
         >
-          {next.status === "confirmed" ? "Marked arrived" : "Arrived"}
+          {next.status === "confirmed" ? t.today.markedArrived : t.today.markArrived}
         </Button>
         <Button
           size="sm"
@@ -156,7 +160,7 @@ export function NextUpCard({
           disabled={marking}
           leadingIcon={<UserX className="h-4 w-4" />}
         >
-          No show
+          {t.today.markNoShow}
         </Button>
         {next.customer.phone && (
           <a

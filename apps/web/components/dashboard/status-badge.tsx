@@ -1,19 +1,24 @@
-import { Badge, type BadgeProps } from "@/components/ui/badge";
+"use client";
 
-const STATUS_MAP: Record<string, { label: string; variant: BadgeProps["variant"] }> = {
-  active: { label: "Active", variant: "success" },
-  suspended: { label: "Suspended", variant: "destructive" },
-  pending: { label: "Pending", variant: "warning" },
-  confirmed: { label: "Confirmed", variant: "success" },
-  cancelled: { label: "Cancelled", variant: "destructive" },
-  completed: { label: "Completed", variant: "neutral" },
-  no_show: { label: "No show", variant: "warning" },
+import { Badge, type BadgeProps } from "@/components/ui/badge";
+import { useT } from "@/lib/i18n/language-context";
+import type { Dictionary } from "@/lib/i18n/dictionary";
+
+const VARIANT_MAP: Record<string, BadgeProps["variant"]> = {
+  active: "success",
+  suspended: "destructive",
+  inactive: "neutral",
+  pending: "warning",
+  confirmed: "success",
+  cancelled: "destructive",
+  completed: "neutral",
+  no_show: "warning",
 };
 
 /**
- * Maps an API status string to a styled Badge. Kept as a separate
- * component so any future status colour rules live in one place and
- * call sites stay terse: `<StatusBadge status={booking.status} />`.
+ * Maps an API status string to a styled, localized Badge. Status keys mirror
+ * the API enum exactly so adding a new value only needs a translation entry
+ * + a variant mapping below.
  */
 export function StatusBadge({
   status,
@@ -22,6 +27,14 @@ export function StatusBadge({
   status: string;
   variant?: BadgeProps["variant"];
 }) {
-  const mapped = STATUS_MAP[status];
-  return <Badge variant={variant ?? mapped?.variant ?? "neutral"}>{mapped?.label ?? status}</Badge>;
+  const { t } = useT();
+  const label =
+    (t.status as Record<string, string | undefined>)[status] ?? status;
+  return (
+    <Badge variant={variant ?? VARIANT_MAP[status] ?? "neutral"}>{label}</Badge>
+  );
 }
+
+// Helps TS show the keys we expect when consumers want to ensure they
+// pass a known status — but at runtime we accept anything.
+export type KnownStatus = keyof Dictionary["status"];

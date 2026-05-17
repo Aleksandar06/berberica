@@ -3,6 +3,7 @@
 import { DateTime } from "luxon";
 import { Calendar, Clock, User } from "lucide-react";
 
+import { useT } from "@/lib/i18n/language-context";
 import { cn } from "@/lib/utils";
 
 export interface BookingSummaryCardProps {
@@ -31,9 +32,10 @@ export function BookingSummaryCard({
   timezone,
   className,
 }: BookingSummaryCardProps) {
+  const { t, locale } = useT();
   const dt = DateTime.fromISO(startUtc, { zone: "utc" })
     .setZone(timezone)
-    .setLocale("en-US");
+    .setLocale(locale);
   return (
     <div
       className={cn(
@@ -43,10 +45,10 @@ export function BookingSummaryCard({
     >
       <div className="flex items-start justify-between gap-3">
         <p className="text-sm font-semibold uppercase tracking-wide text-primary">
-          Your appointment
+          {t.booking.yourAppointment}
         </p>
         <span className="text-xs font-medium text-muted-foreground">
-          {durationMinutes} min
+          {durationMinutes} {t.common.min}
         </span>
       </div>
       <p className="text-h3 text-foreground">{serviceName}</p>
@@ -62,7 +64,7 @@ export function BookingSummaryCard({
         </div>
         <div className="flex items-center gap-2">
           <User className="h-4 w-4 text-muted-foreground" aria-hidden />
-          <span>with {staffName}</span>
+          <span>{t.booking.summaryWith} {staffName}</span>
         </div>
       </div>
     </div>

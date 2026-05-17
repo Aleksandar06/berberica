@@ -8,6 +8,7 @@ import { z } from "zod";
 
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/auth-context";
+import { useT } from "@/lib/i18n/language-context";
 import { AuthLayout } from "@/components/auth/auth-layout";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,6 +28,7 @@ import { loginInputSchema, type LoginInput } from "@scheduling/schemas";
  * decides which dashboard to land on based on memberships.
  */
 export default function LoginPage() {
+  const { t } = useT();
   const { login } = useAuth();
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -41,11 +43,7 @@ export default function LoginPage() {
       await login(values.email, values.password);
       // login() handles the post-success redirect via the role router.
     } catch (err) {
-      setFormError(
-        err instanceof ApiError
-          ? err.message
-          : "Could not sign in. Please try again.",
-      );
+      setFormError(err instanceof ApiError ? err.message : t.auth.signInError);
     }
   }
 
@@ -63,9 +61,9 @@ export default function LoginPage() {
           noValidate
         >
             <div className="space-y-1.5">
-              <h1 className="text-h1 text-foreground">Welcome back</h1>
+              <h1 className="text-h1 text-foreground">{t.auth.signInTitle}</h1>
               <p className="text-sm text-muted-foreground">
-                Sign in to manage your bookings.
+                {t.auth.signInSubtitle}
               </p>
             </div>
 
@@ -83,7 +81,7 @@ export default function LoginPage() {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>{t.auth.email}</FormLabel>
                   <FormControl>
                     <Input type="email" autoComplete="email" {...field} />
                   </FormControl>
@@ -96,7 +94,7 @@ export default function LoginPage() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Password</FormLabel>
+                  <FormLabel>{t.auth.password}</FormLabel>
                   <FormControl>
                     <PasswordInput autoComplete="current-password" {...field} />
                   </FormControl>
@@ -111,16 +109,16 @@ export default function LoginPage() {
               className="w-full"
               loading={form.formState.isSubmitting}
             >
-              Sign in
+              {t.auth.signInCta}
             </Button>
 
             <p className="text-sm text-muted-foreground text-center">
-              New customer?{" "}
+              {t.auth.noAccount}{" "}
               <Link
                 href="/dashboard/register"
                 className="text-primary font-medium hover:underline"
               >
-                Create an account
+                {t.auth.createAccount}
               </Link>
             </p>
         </form>
@@ -133,14 +131,14 @@ export default function LoginPage() {
           // dev while still being a single-click reveal for seeding.
         >
           <summary className="cursor-pointer font-medium text-foreground">
-            Dev seed credentials
+            {t.auth.devCredentials}
           </summary>
           <div className="mt-2 space-y-1.5 font-mono">
             <p>admin@elite-barbers.test</p>
             <p>admin@smile-dental.test</p>
             <p>superadmin@example.com</p>
             <p className="pt-1 border-t border-border/50">
-              password: <span className="text-foreground">dev-password-123</span>
+              {t.auth.devCredentialsHint}
             </p>
           </div>
         </details>

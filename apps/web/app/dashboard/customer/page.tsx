@@ -14,6 +14,7 @@ import { useConfirm } from "@/components/confirm-dialog";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { RescheduleSheet } from "@/components/reschedule-sheet";
+import { useT } from "@/lib/i18n/language-context";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 import { errorMessage, useToast } from "@/lib/ui/toast";
 
@@ -24,6 +25,7 @@ import { errorMessage, useToast } from "@/lib/ui/toast";
  * scoped to that tenant.
  */
 export default function CustomerBookingsPage() {
+  const { t } = useT();
   const toast = useToast();
   const confirm = useConfirm();
   const qc = useQueryClient();
@@ -51,10 +53,10 @@ export default function CustomerBookingsPage() {
 
   async function onCancel(booking: CustomerBooking) {
     const ok = await confirm({
-      title: "Cancel this booking?",
-      description: `${booking.service.name} at ${booking.tenant.name}.`,
-      confirmText: "Yes, cancel",
-      cancelText: "Keep it",
+      title: t.customer.cancelConfirmTitle,
+      description: `${booking.service.name} — ${booking.tenant.name}.`,
+      confirmText: t.customer.cancelConfirmYes,
+      cancelText: t.customer.cancelConfirmNo,
       tone: "destructive",
     });
     if (ok) cancel.mutate(booking.id);
@@ -78,30 +80,30 @@ export default function CustomerBookingsPage() {
   return (
     <>
       <PageHeader
-        title="My bookings"
+        title={t.customer.title}
         description={
           bookings.data
             ? (() => {
                 const upc = upcoming.length;
                 const total = items.length;
                 if (total === 0) {
-                  return "Manage appointments you've booked across all venues.";
+                  return t.customer.descriptionEmpty;
                 }
                 return (
                   <span className="tabular-nums">
                     <strong className="text-foreground font-semibold">
                       {upc}
                     </strong>{" "}
-                    upcoming
+                    {t.common.upcoming}
                     <span className="text-border mx-2">·</span>
                     <strong className="text-foreground font-semibold">
                       {total - upc}
                     </strong>{" "}
-                    past
+                    {t.common.past}
                   </span>
                 );
               })()
-            : "Manage appointments you've booked across all venues."
+            : t.customer.descriptionEmpty
         }
       />
 
@@ -122,15 +124,15 @@ export default function CustomerBookingsPage() {
       {bookings.data && items.length === 0 && (
         <EmptyState
           icon={Calendar}
-          title="No bookings yet"
-          description="Once you book an appointment, it'll show up here so you can manage it."
+          title={t.customer.noBookingsTitle}
+          description={t.customer.noBookingsBody}
         />
       )}
 
       {upcoming.length > 0 && (
         <section className="space-y-3">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Upcoming
+            {t.customer.upcoming}
           </h2>
           <div className="space-y-3">
             {upcoming.map((b) => (
@@ -148,7 +150,7 @@ export default function CustomerBookingsPage() {
       {past.length > 0 && (
         <section className="space-y-3">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Past & cancelled
+            {t.customer.pastCancelled}
           </h2>
           <div className="space-y-3">
             {past.map((b) => (
@@ -198,6 +200,7 @@ function BookingCard({
   /** Show a "Rebook" deep-link — used on past/cancelled cards. */
   showRebook?: boolean;
 }) {
+  const { t, locale } = useT();
   const tz = booking.tenant.timezone;
   const start = DateTime.fromISO(booking.startAt, { zone: "utc" }).setZone(tz);
   const end = DateTime.fromISO(booking.endAt, { zone: "utc" }).setZone(tz);
@@ -225,12 +228,12 @@ function BookingCard({
           <StatusBadge status={booking.status} />
         </div>
         <p className="text-sm text-muted-foreground tabular-nums">
-          {start.setLocale("en-US").toFormat("ccc, LLL d, yyyy · HH:mm")}–
+          {start.setLocale(locale).toFormat("ccc, LLL d, yyyy · HH:mm")}–
           {end.toFormat("HH:mm")}{" "}
           <span className="text-muted-foreground/70">({tz})</span>
         </p>
         <p className="text-xs text-muted-foreground">
-          {booking.tenant.name} · with {booking.staffMember.displayName}
+          {booking.tenant.name} · {booking.staffMember.displayName}
         </p>
       </div>
       {((onCancel || onReschedule) && isModifiable) || showRebook ? (
@@ -242,12 +245,12 @@ function BookingCard({
               size="sm"
               leadingIcon={<Repeat className="h-3.5 w-3.5" />}
             >
-              <Link href={rebookHref}>Rebook</Link>
+              <Link href={rebookHref}>{t.customer.rebook}</Link>
             </Button>
           )}
           {onReschedule && isModifiable && (
             <Button variant="ghost" size="sm" onClick={onReschedule}>
-              Reschedule
+              {t.common.reschedule}
             </Button>
           )}
           {onCancel && isModifiable && (
@@ -257,7 +260,7 @@ function BookingCard({
               className="text-destructive hover:bg-destructive/10 hover:text-destructive"
               onClick={onCancel}
             >
-              Cancel
+              {t.common.cancel}
             </Button>
           )}
         </div>

@@ -1,8 +1,11 @@
+"use client";
+
 import { CalendarCheck, ShieldCheck, Sparkles } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { LogoMark } from "@/components/brand/logo";
+import { useT } from "@/lib/i18n/language-context";
 
 /**
  * Two-pane shell for auth screens. On desktop the left pane is a
@@ -14,6 +17,7 @@ import { LogoMark } from "@/components/brand/logo";
  * padding); this component just centers and frames it.
  */
 export function AuthLayout({ children }: { children: ReactNode }) {
+  const { t } = useT();
   return (
     <main className="min-h-screen grid lg:grid-cols-2">
       {/* Brand panel — desktop only */}
@@ -45,21 +49,20 @@ export function AuthLayout({ children }: { children: ReactNode }) {
 
         <div className="relative space-y-5 max-w-md">
           <h2 className="text-4xl font-bold leading-tight">
-            Bookings without the back-and-forth.
+            {t.auth.layoutTitle}
           </h2>
           <p className="text-primary-foreground/80 text-lg">
-            One platform for booking — and a clean dashboard for the venues
-            who fulfil them.
+            {t.auth.layoutSubtitle}
           </p>
           <ul className="space-y-3 pt-2 text-sm">
             <Perk icon={<CalendarCheck className="h-4 w-4" />}>
-              Real-time availability, no double-bookings
+              {t.auth.perk1}
             </Perk>
             <Perk icon={<ShieldCheck className="h-4 w-4" />}>
-              Email verification + role-based access on every account
+              {t.auth.perk2}
             </Perk>
             <Perk icon={<Sparkles className="h-4 w-4" />}>
-              Whitelabel branding for every venue
+              {t.auth.perk3}
             </Perk>
           </ul>
         </div>

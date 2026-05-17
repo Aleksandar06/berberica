@@ -8,6 +8,9 @@ import { hexToHsl, hslString, readableForeground } from "@/lib/color";
 import { publicApi } from "@/lib/api/public";
 import type { PublicTenantProfile } from "@/lib/api/types";
 import { Button } from "@/components/ui/button";
+import { LanguageSwitcher } from "@/components/language-switcher";
+import { getServerT } from "@/lib/i18n/server";
+import type { Dictionary } from "@/lib/i18n/dictionary";
 
 interface LayoutProps {
   children: ReactNode;
@@ -72,13 +75,15 @@ export default async function TenantLayout({ children, params }: LayoutProps) {
     "--accent-foreground": accentDark,
   } as CSSProperties;
 
+  const { t } = await getServerT();
+
   return (
     <div style={brandStyle} className="min-h-screen flex flex-col bg-background">
-      <TenantHeader profile={profile} />
+      <TenantHeader profile={profile} t={t} />
       <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {children}
       </main>
-      <TenantFooter profile={profile} />
+      <TenantFooter profile={profile} t={t} />
     </div>
   );
 }
@@ -87,14 +92,20 @@ export default async function TenantLayout({ children, params }: LayoutProps) {
 // HEADER
 // ===========================================================================
 
-function TenantHeader({ profile }: { profile: PublicTenantProfile }) {
+function TenantHeader({
+  profile,
+  t,
+}: {
+  profile: PublicTenantProfile;
+  t: Dictionary;
+}) {
   return (
     <header className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
         <Link
           href={`/${profile.slug}`}
           className="flex items-center gap-3 min-w-0 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg"
-          aria-label={`${profile.name} — home`}
+          aria-label={`${profile.name} — ${t.common.today}`}
         >
           {profile.branding?.logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -120,11 +131,12 @@ function TenantHeader({ profile }: { profile: PublicTenantProfile }) {
             href={`/${profile.slug}/services`}
             className="hidden sm:inline-flex h-10 px-3 items-center rounded-full text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition"
           >
-            Services
+            {t.storefront.servicesHeading}
           </Link>
           <Button asChild size="md">
-            <Link href={`/${profile.slug}/book`}>Book now</Link>
+            <Link href={`/${profile.slug}/book`}>{t.common.bookNow}</Link>
           </Button>
+          <LanguageSwitcher />
         </nav>
       </div>
     </header>
@@ -135,14 +147,20 @@ function TenantHeader({ profile }: { profile: PublicTenantProfile }) {
 // FOOTER
 // ===========================================================================
 
-function TenantFooter({ profile }: { profile: PublicTenantProfile }) {
+function TenantFooter({
+  profile,
+  t,
+}: {
+  profile: PublicTenantProfile;
+  t: Dictionary;
+}) {
   return (
     <footer className="border-t border-border bg-muted/30 mt-12">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 grid sm:grid-cols-3 gap-6 text-sm">
         <div className="space-y-1.5">
           <p className="font-semibold text-foreground">{profile.name}</p>
           <p className="text-muted-foreground">
-            Bookings in{" "}
+            {t.storefront.bookingsIn}{" "}
             <span className="font-medium text-foreground">{profile.timezone}</span>.
           </p>
         </div>
@@ -178,7 +196,7 @@ function TenantFooter({ profile }: { profile: PublicTenantProfile }) {
         </div>
         <div className="text-xs text-muted-foreground sm:text-right space-y-1">
           <p>
-            Powered by{" "}
+            {t.storefront.poweredBy}{" "}
             <Link
               href="/"
               className="font-medium text-foreground hover:text-primary transition"

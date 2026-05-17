@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { AuthLayout } from "@/components/auth/auth-layout";
 import { resendVerification, verifyEmail } from "@/lib/api/auth";
 import { ApiError } from "@/lib/api/client";
+import { useT } from "@/lib/i18n/language-context";
 
 /**
  * Landing page for the link in the Resend account-verification email
@@ -42,19 +43,17 @@ export default function VerifyEmailPage() {
 }
 
 function VerifyEmailInner() {
+  const { t: dict } = useT();
   const params = useSearchParams();
   const token = params.get("token");
   const [error, setError] = useState<string | null>(null);
   const [verified, setVerified] = useState(false);
 
   const verifyMutation = useMutation({
-    mutationFn: (t: string) => verifyEmail(t),
+    mutationFn: (tok: string) => verifyEmail(tok),
     onSuccess: () => setVerified(true),
     onError: (e) => {
-      const msg =
-        e instanceof ApiError
-          ? e.message
-          : "We couldn't verify this link. It may have expired.";
+      const msg = e instanceof ApiError ? e.message : dict.auth.verifyErrorDefault;
       setError(msg);
     },
   });
@@ -64,9 +63,7 @@ function VerifyEmailInner() {
   // "verify"; we shouldn't make them click another).
   useEffect(() => {
     if (!token) {
-      setError(
-        "This link is missing its verification token. Open the most recent email from Berberica and try again.",
-      );
+      setError(dict.auth.verifyErrorDefault);
       return;
     }
     verifyMutation.mutate(token);
@@ -83,6 +80,7 @@ function VerifyEmailInner() {
 // ---------------------------------------------------------------------------
 
 function VerifyingState() {
+  const { t } = useT();
   return (
     <Card>
       <div className="flex flex-col items-center text-center gap-4">
@@ -90,9 +88,9 @@ function VerifyingState() {
           <Loader2 className="h-6 w-6 animate-spin" aria-hidden />
         </div>
         <div className="space-y-1">
-          <h1 className="text-h2 text-foreground">Verifying your email…</h1>
+          <h1 className="text-h2 text-foreground">{t.auth.verifyingTitle}</h1>
           <p className="text-sm text-muted-foreground">
-            Hang tight — this should take just a moment.
+            {t.auth.verifyingSubtitle}
           </p>
         </div>
       </div>
@@ -101,6 +99,7 @@ function VerifyingState() {
 }
 
 function SuccessState() {
+  const { t } = useT();
   return (
     <Card>
       <div className="flex flex-col items-center text-center gap-4 scale-in">
@@ -108,18 +107,17 @@ function SuccessState() {
           <CheckCircle2 className="h-7 w-7" aria-hidden />
         </div>
         <div className="space-y-1">
-          <h1 className="text-h1 text-foreground">You&apos;re all set</h1>
+          <h1 className="text-h1 text-foreground">{t.auth.verifiedTitle}</h1>
           <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-            Your email is verified. You can now book appointments and manage
-            your account.
+            {t.auth.verifiedSubtitle}
           </p>
         </div>
         <div className="flex flex-col gap-2 w-full pt-2">
           <Button asChild className="w-full">
-            <Link href="/dashboard">Continue to Berberica</Link>
+            <Link href="/dashboard">{t.auth.verifyContinue}</Link>
           </Button>
           <Button asChild variant="ghost" className="w-full">
-            <Link href="/">Back to home</Link>
+            <Link href="/">{t.auth.verifyBackHome}</Link>
           </Button>
         </div>
       </div>
@@ -128,6 +126,7 @@ function SuccessState() {
 }
 
 function ErrorState({ message }: { message: string | null }) {
+  const { t } = useT();
   const [resendEmail, setResendEmail] = useState("");
   const [resendSent, setResendSent] = useState(false);
   const resend = useMutation({
@@ -142,17 +141,15 @@ function ErrorState({ message }: { message: string | null }) {
           <MailWarning className="h-7 w-7" aria-hidden />
         </div>
         <div className="space-y-1">
-          <h1 className="text-h1 text-foreground">Link can&apos;t be used</h1>
+          <h1 className="text-h1 text-foreground">{t.auth.verifyErrorTitle}</h1>
           <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-            {message ?? "This verification link is invalid or has expired."}
+            {message ?? t.auth.verifyErrorDefault}
           </p>
         </div>
       </div>
 
       <div className="mt-6 space-y-3 border-t border-border pt-5">
-        <p className="text-sm text-foreground">
-          Send a fresh link — enter the email you registered with:
-        </p>
+        <p className="text-sm text-foreground">{t.auth.verifyResendIntro}</p>
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -161,7 +158,7 @@ function ErrorState({ message }: { message: string | null }) {
           className="space-y-3"
         >
           <div className="space-y-1">
-            <Label htmlFor="resend-email">Email</Label>
+            <Label htmlFor="resend-email">{t.auth.email}</Label>
             <Input
               id="resend-email"
               type="email"
@@ -178,18 +175,18 @@ function ErrorState({ message }: { message: string | null }) {
             disabled={resend.isPending || resendSent}
           >
             {resendSent
-              ? "Email sent — check your inbox"
+              ? t.auth.verifyResendSent
               : resend.isPending
-                ? "Sending…"
-                : "Send new verification email"}
+                ? t.auth.verifyResendSending
+                : t.auth.verifyResendButton}
           </Button>
           <p className="text-xs text-muted-foreground text-center">
-            Already verified?{" "}
+            {t.auth.verifyAlreadyVerified}{" "}
             <Link
               href="/dashboard/login"
               className="text-primary hover:underline"
             >
-              Sign in
+              {t.auth.signInCta}
             </Link>
           </p>
         </form>

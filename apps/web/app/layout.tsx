@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
+import { cookies } from "next/headers";
 import type { ReactNode } from "react";
 
+import { parseLocaleCookie } from "@/lib/i18n/parse-cookie";
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -26,11 +28,20 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  // Read the `lang` cookie on the server so the initial HTML carries the
+  // correct lang attribute + the LanguageProvider hydrates with the user's
+  // chosen locale — no flash from English → Macedonian on first paint.
+  const cookieStore = await cookies();
+  const locale = parseLocaleCookie(cookieStore.get("lang")?.value);
   return (
-    <html lang="en" className={inter.variable} suppressHydrationWarning>
+    <html lang={locale} className={inter.variable} suppressHydrationWarning>
       <body className="min-h-screen bg-background text-foreground antialiased">
-        <Providers>{children}</Providers>
+        <Providers initialLocale={locale}>{children}</Providers>
       </body>
     </html>
   );

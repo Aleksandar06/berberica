@@ -3,6 +3,8 @@
 import { CalendarRange, Coffee, Plus } from "lucide-react";
 import Link from "next/link";
 
+import { useT } from "@/lib/i18n/language-context";
+
 /**
  * Three pill-style quick actions sitting under the next-up card. These
  * are the actions a barber reaches for between clients:
@@ -18,6 +20,7 @@ import Link from "next/link";
  * notices.
  */
 export function TodayQuickActions() {
+  const { t } = useT();
   const items: Array<{
     label: string;
     icon: React.ReactNode;
@@ -25,22 +28,22 @@ export function TodayQuickActions() {
     helper: string;
   }> = [
     {
-      label: "Add walk-in",
+      label: t.today.addWalkIn,
       icon: <Plus className="h-4 w-4" />,
       href: "/dashboard/business/bookings",
-      helper: "Slot in a cash customer",
+      helper: t.today.addWalkInHelper,
     },
     {
-      label: "View week",
+      label: t.today.viewWeek,
       icon: <CalendarRange className="h-4 w-4" />,
       href: "/dashboard/business/bookings",
-      helper: "Week calendar",
+      helper: t.today.viewWeekHelper,
     },
     {
-      label: "Block time",
+      label: t.today.blockTime,
       icon: <Coffee className="h-4 w-4" />,
       href: "/dashboard/business/availability",
-      helper: "Lunch, break, day off",
+      helper: t.today.blockTimeHelper,
     },
   ];
 

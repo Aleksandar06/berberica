@@ -13,6 +13,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { formatMoney } from "@/lib/format/money";
+import { useT } from "@/lib/i18n/language-context";
 import { cn } from "@/lib/utils";
 
 type Preset = "today" | "week" | "month" | "custom";
@@ -30,6 +31,7 @@ type Preset = "today" | "week" | "month" | "custom";
  * formatting.
  */
 export default function BusinessEarningsPage() {
+  const { t } = useT();
   const [preset, setPreset] = useState<Preset>("month");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
@@ -45,31 +47,31 @@ export default function BusinessEarningsPage() {
   });
 
   const description = useMemo(() => {
-    if (!earnings.data) return "Track every euro flowing through your venue.";
+    if (!earnings.data) return t.earnings.descriptionEmpty;
     const earned = earnings.data.totals.earned.cents;
     const projected = earnings.data.totals.projected.cents;
     if (earned === 0 && projected === 0) {
-      return "No revenue in this window yet.";
+      return t.earnings.descriptionDefault;
     }
     return (
       <span className="tabular-nums">
         <strong className="text-foreground font-semibold">
           {formatMoney(earned, earnings.data.currency)}
         </strong>{" "}
-        earned
+        {t.earnings.kpiEarned.toLowerCase()}
         <span className="text-border mx-2">·</span>
         <strong className="text-foreground font-semibold">
           {formatMoney(projected, earnings.data.currency)}
         </strong>{" "}
-        projected
+        {t.earnings.kpiProjected.toLowerCase()}
       </span>
     );
-  }, [earnings.data]);
+  }, [earnings.data, t]);
 
   return (
     <>
       <PageHeader
-        title="Earnings"
+        title={t.earnings.title}
         description={description}
         actions={
           <Tabs
@@ -77,10 +79,10 @@ export default function BusinessEarningsPage() {
             onValueChange={(v) => setPreset(v as Preset)}
           >
             <TabsList className="h-10">
-              <TabsTrigger value="today">Today</TabsTrigger>
-              <TabsTrigger value="week">7 days</TabsTrigger>
-              <TabsTrigger value="month">30 days</TabsTrigger>
-              <TabsTrigger value="custom">Custom</TabsTrigger>
+              <TabsTrigger value="today">{t.earnings.presetToday}</TabsTrigger>
+              <TabsTrigger value="week">{t.earnings.preset7Days}</TabsTrigger>
+              <TabsTrigger value="month">{t.earnings.preset30Days}</TabsTrigger>
+              <TabsTrigger value="custom">{t.earnings.presetCustom}</TabsTrigger>
             </TabsList>
           </Tabs>
         }
@@ -94,7 +96,7 @@ export default function BusinessEarningsPage() {
                 htmlFor="from"
                 className="text-[11px] uppercase tracking-wide text-muted-foreground"
               >
-                From
+                {t.earnings.from}
               </Label>
               <Input
                 id="from"
@@ -108,7 +110,7 @@ export default function BusinessEarningsPage() {
                 htmlFor="to"
                 className="text-[11px] uppercase tracking-wide text-muted-foreground"
               >
-                To
+                {t.earnings.to}
               </Label>
               <Input
                 id="to"
@@ -139,6 +141,7 @@ export default function BusinessEarningsPage() {
 // ===========================================================================
 
 function EarningsContent({ data }: { data: EarningsResponse }) {
+  const { t } = useT();
   const totalBookings =
     data.totals.earned.count +
     data.totals.projected.count +
@@ -148,23 +151,23 @@ function EarningsContent({ data }: { data: EarningsResponse }) {
     <>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <KpiCard
-          label="Earned"
+          label={t.earnings.kpiEarned}
           value={formatMoney(data.totals.earned.cents, data.currency)}
-          sub={`${data.totals.earned.count} completed`}
+          sub={t.earnings.kpiEarnedSub(data.totals.earned.count)}
           tone="success"
           icon={<PiggyBank className="h-4 w-4" />}
         />
         <KpiCard
-          label="Projected"
+          label={t.earnings.kpiProjected}
           value={formatMoney(data.totals.projected.cents, data.currency)}
-          sub={`${data.totals.projected.count} upcoming`}
+          sub={t.earnings.kpiProjectedSub(data.totals.projected.count)}
           tone="primary"
           icon={<TrendingUp className="h-4 w-4" />}
         />
         <KpiCard
-          label="Lost"
+          label={t.earnings.kpiLost}
           value={formatMoney(data.totals.lost.cents, data.currency)}
-          sub={`${data.totals.lost.count} cancelled or no-show`}
+          sub={t.earnings.kpiLostSub(data.totals.lost.count)}
           tone="destructive"
           icon={<ArrowDownRight className="h-4 w-4" />}
         />
@@ -173,8 +176,8 @@ function EarningsContent({ data }: { data: EarningsResponse }) {
       {totalBookings === 0 ? (
         <EmptyState
           icon={PiggyBank}
-          title="No bookings in this window"
-          description="Widen the date range or wait for bookings to come in. Earnings will appear here automatically as the day fills up."
+          title={t.earnings.emptyTitle}
+          description={t.earnings.emptyBody}
         />
       ) : (
         <>
@@ -182,7 +185,7 @@ function EarningsContent({ data }: { data: EarningsResponse }) {
 
           <div className="grid lg:grid-cols-2 gap-3">
             <BreakdownTable
-              title="Top services"
+              title={t.earnings.topServices}
               rows={data.byService.map((s) => ({
                 id: s.id,
                 label: s.name,
@@ -190,10 +193,10 @@ function EarningsContent({ data }: { data: EarningsResponse }) {
                 cents: s.cents,
               }))}
               currency={data.currency}
-              emptyLabel="No service revenue yet"
+              emptyLabel={t.earnings.noRevenueServices}
             />
             <BreakdownTable
-              title="Top staff"
+              title={t.earnings.topStaff}
               rows={data.byStaff.map((s) => ({
                 id: s.id,
                 label: s.displayName,
@@ -201,7 +204,7 @@ function EarningsContent({ data }: { data: EarningsResponse }) {
                 cents: s.cents,
               }))}
               currency={data.currency}
-              emptyLabel="No staff revenue yet"
+              emptyLabel={t.earnings.noRevenueStaff}
             />
           </div>
         </>
@@ -259,6 +262,7 @@ function KpiCard({
  * carries a <title> element for screen readers.
  */
 function EarningsChart({ data }: { data: EarningsResponse }) {
+  const { t } = useT();
   const max = Math.max(
     ...data.byDay.map((d) => d.earnedCents + d.projectedCents),
     1,
@@ -275,7 +279,7 @@ function EarningsChart({ data }: { data: EarningsResponse }) {
     <section className="rounded-2xl border border-border bg-card p-4 sm:p-5 space-y-3">
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-[11px] uppercase tracking-wide font-semibold text-muted-foreground">
-          Daily revenue
+          {t.earnings.chartTitle}
         </h2>
         <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
           <span className="inline-flex items-center gap-1.5">
@@ -283,14 +287,14 @@ function EarningsChart({ data }: { data: EarningsResponse }) {
               aria-hidden
               className="h-2.5 w-2.5 rounded-sm bg-success"
             />
-            Earned
+            {t.earnings.legendEarned}
           </span>
           <span className="inline-flex items-center gap-1.5">
             <span
               aria-hidden
               className="h-2.5 w-2.5 rounded-sm bg-primary/50"
             />
-            Projected
+            {t.earnings.legendProjected}
           </span>
         </div>
       </div>
@@ -345,6 +349,7 @@ function BreakdownTable({
   currency: string;
   emptyLabel: string;
 }) {
+  const { t } = useT();
   const total = rows.reduce((sum, r) => sum + r.cents, 0);
   return (
     <section className="rounded-2xl border border-border bg-card overflow-hidden">
@@ -380,7 +385,7 @@ function BreakdownTable({
                     />
                   </div>
                   <span className="text-xs text-muted-foreground tabular-nums shrink-0">
-                    {r.count} {r.count === 1 ? "booking" : "bookings"}
+                    {r.count} {t.common.bookings(r.count)}
                   </span>
                 </div>
               </li>

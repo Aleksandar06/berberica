@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form";
 
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/auth-context";
+import { useT } from "@/lib/i18n/language-context";
 import { AuthLayout } from "@/components/auth/auth-layout";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,6 +28,7 @@ import {
 } from "@scheduling/schemas";
 
 export default function RegisterPage() {
+  const { t } = useT();
   const { register: registerCustomer } = useAuth();
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -64,9 +66,9 @@ export default function RegisterPage() {
           noValidate
         >
           <div className="space-y-1.5">
-            <h1 className="text-h1 text-foreground">Create your account</h1>
+            <h1 className="text-h1 text-foreground">{t.auth.registerTitle}</h1>
             <p className="text-sm text-muted-foreground">
-              Manage every booking from one place.
+              {t.auth.registerSubtitle}
             </p>
           </div>
 
@@ -85,7 +87,7 @@ export default function RegisterPage() {
               name="firstName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>First name</FormLabel>
+                  <FormLabel>{t.auth.firstName}</FormLabel>
                   <FormControl>
                     <Input autoComplete="given-name" {...field} />
                   </FormControl>
@@ -98,7 +100,7 @@ export default function RegisterPage() {
               name="lastName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Last name</FormLabel>
+                  <FormLabel>{t.auth.lastName}</FormLabel>
                   <FormControl>
                     <Input autoComplete="family-name" {...field} />
                   </FormControl>
@@ -112,7 +114,7 @@ export default function RegisterPage() {
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Email</FormLabel>
+                <FormLabel>{t.auth.email}</FormLabel>
                 <FormControl>
                   <Input type="email" autoComplete="email" {...field} />
                 </FormControl>
@@ -125,15 +127,11 @@ export default function RegisterPage() {
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Password</FormLabel>
+                <FormLabel>{t.auth.password}</FormLabel>
                 <FormControl>
                   <PasswordInput autoComplete="new-password" {...field} />
                 </FormControl>
                 <PasswordStrength value={password ?? ""} />
-                <FormDescription>
-                  At least 12 characters. Mix upper, lower, numbers, and
-                  symbols for a stronger password.
-                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -145,16 +143,16 @@ export default function RegisterPage() {
             className="w-full"
             loading={form.formState.isSubmitting}
           >
-            Create account
+            {t.auth.registerCta}
           </Button>
 
           <p className="text-sm text-muted-foreground text-center">
-            Already have an account?{" "}
+            {t.auth.haveAccount}{" "}
             <Link
               href="/dashboard/login"
               className="text-primary font-medium hover:underline"
             >
-              Sign in
+              {t.auth.signInCta}
             </Link>
           </p>
         </form>

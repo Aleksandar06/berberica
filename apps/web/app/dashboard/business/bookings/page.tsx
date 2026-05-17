@@ -25,6 +25,7 @@ import { BookingsWeekCalendar } from "@/components/dashboard/bookings-week-calen
 import { PageHeader } from "@/components/page-header";
 import { RescheduleSheet } from "@/components/reschedule-sheet";
 import { useAuth } from "@/lib/auth/auth-context";
+import { useT } from "@/lib/i18n/language-context";
 import { errorMessage, useToast } from "@/lib/ui/toast";
 import { cn } from "@/lib/utils";
 
@@ -41,6 +42,7 @@ type View = "list" | "calendar";
 const TENANT_TIMEZONE = "Europe/Skopje"; // TODO: pull from profile when timezone-in-shell lands
 
 export default function BusinessBookingsPage() {
+  const { t } = useT();
   const toast = useToast();
   const confirm = useConfirm();
   const qc = useQueryClient();
@@ -142,26 +144,26 @@ export default function BusinessBookingsPage() {
   return (
     <>
       <PageHeader
-        title="Bookings"
+        title={t.bookings.title}
         description={
           counts.total === 0 ? (
-            "No bookings yet."
+            t.bookings.descriptionEmpty
           ) : (
             <span className="tabular-nums">
               <strong className="text-foreground font-semibold">
                 {counts.today}
               </strong>{" "}
-              today
+              {t.bookings.todayCount}
               <span className="text-border mx-2">·</span>
               <strong className="text-foreground font-semibold">
                 {counts.upcoming}
               </strong>{" "}
-              upcoming
+              {t.bookings.upcoming}
               <span className="text-border mx-2">·</span>
               <strong className="text-foreground font-semibold">
                 {counts.total}
               </strong>{" "}
-              in view
+              {t.bookings.inView}
             </span>
           )
         }
@@ -180,8 +182,8 @@ export default function BusinessBookingsPage() {
       {bookings.data && items.length === 0 && view === "list" && (
         <EmptyState
           icon={CalendarDays}
-          title="No bookings match"
-          description="Try widening the date range or clearing filters."
+          title={t.bookings.noMatchTitle}
+          description={t.bookings.noMatchBody}
           action={
             <Button
               variant="secondary"
@@ -194,7 +196,7 @@ export default function BusinessBookingsPage() {
                 })
               }
             >
-              Clear filters
+              {t.bookings.filterClear}
             </Button>
           }
         />
@@ -258,16 +260,17 @@ function ViewToggle({
   value: View;
   onChange: (next: View) => void;
 }) {
+  const { t } = useT();
   return (
     <Tabs value={value} onValueChange={(v) => onChange(v as View)}>
       <TabsList className="h-10">
         <TabsTrigger value="list" className="gap-2">
           <List className="h-4 w-4" aria-hidden />
-          List
+          {t.bookings.viewList}
         </TabsTrigger>
         <TabsTrigger value="calendar" className="gap-2">
           <CalendarRange className="h-4 w-4" aria-hidden />
-          Calendar
+          {t.bookings.viewCalendar}
         </TabsTrigger>
       </TabsList>
     </Tabs>

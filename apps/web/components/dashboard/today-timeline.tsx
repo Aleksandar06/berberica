@@ -1,7 +1,13 @@
 "use client";
 
 import { DateTime } from "luxon";
-import { CheckCircle2, MoreHorizontal, Phone, UserX } from "lucide-react";
+import {
+  CheckCircle2,
+  CircleCheck,
+  MoreHorizontal,
+  Phone,
+  UserX,
+} from "lucide-react";
 import { useMemo } from "react";
 
 import type { BusinessBooking } from "@/lib/api/business";
@@ -14,12 +20,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { StatusBadge } from "@/components/dashboard/status-badge";
+import { useT } from "@/lib/i18n/language-context";
 import { cn } from "@/lib/utils";
 
 export interface TodayTimelineProps {
   bookings: BusinessBooking[];
   timezone: string;
-  onMark: (booking: BusinessBooking, status: "confirmed" | "no_show") => void;
+  onMark: (
+    booking: BusinessBooking,
+    status: "confirmed" | "completed" | "no_show",
+  ) => void;
   onCancel: (booking: BusinessBooking) => void;
   onReschedule: (booking: BusinessBooking) => void;
   marking: boolean;
@@ -44,6 +54,7 @@ export function TodayTimeline({
   onReschedule,
   marking,
 }: TodayTimelineProps) {
+  const { t } = useT();
   const sorted = useMemo(
     () => [...bookings].sort((a, b) => a.startAt.localeCompare(b.startAt)),
     [bookings],
@@ -127,7 +138,7 @@ export function TodayTimeline({
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuContent align="end" className="w-52">
                     {modifiable && (
                       <>
                         <DropdownMenuItem
@@ -135,7 +146,15 @@ export function TodayTimeline({
                           onSelect={() => onMark(b, "confirmed")}
                         >
                           <CheckCircle2 className="h-4 w-4 mr-2" />
-                          Mark arrived
+                          {t.today.markArrived}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          disabled={marking}
+                          onSelect={() => onMark(b, "completed")}
+                          className="text-success focus:text-success"
+                        >
+                          <CircleCheck className="h-4 w-4 mr-2" />
+                          {t.today.markCompleted}
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           disabled={marking}
@@ -143,17 +162,17 @@ export function TodayTimeline({
                           className="text-destructive focus:text-destructive"
                         >
                           <UserX className="h-4 w-4 mr-2" />
-                          Mark no-show
+                          {t.today.markNoShow}
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onSelect={() => onReschedule(b)}>
-                          Reschedule
+                          {t.common.reschedule}
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           className="text-destructive focus:text-destructive"
                           onSelect={() => onCancel(b)}
                         >
-                          Cancel booking
+                          {t.today.cancelBookingButton}
                         </DropdownMenuItem>
                       </>
                     )}

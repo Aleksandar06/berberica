@@ -51,6 +51,7 @@ import { OtpInput } from "@/components/booking/otp-input";
 import { SlotList } from "@/components/booking/slot-list";
 import { StageProgress } from "@/components/booking/stage-progress";
 import { formatPrice } from "@/lib/format/money";
+import { useT } from "@/lib/i18n/language-context";
 import {
   dateInZonePlusDays,
   todayInZone,
@@ -96,15 +97,6 @@ const STAGES_FOR_PROGRESS: Stage[] = [
   "details",
   "verify-otp",
 ];
-const STAGE_LABELS: Record<Stage, string> = {
-  "pick-service": "Service",
-  "pick-staff": "Staff",
-  "pick-time": "Time",
-  details: "Details",
-  "verify-otp": "Verify",
-  submitting: "Booking",
-  confirmed: "Done",
-};
 
 /**
  * Public booking flow — mobile-first, Treatwell-inspired.
@@ -125,6 +117,16 @@ export function BookingFlow({
   preselectedServiceId,
   preselectedStaffId,
 }: Props) {
+  const { t } = useT();
+  const STAGE_LABELS: Record<Stage, string> = {
+    "pick-service": t.booking.stageService,
+    "pick-staff": t.booking.stageStaff,
+    "pick-time": t.booking.stageTime,
+    details: t.booking.stageDetails,
+    "verify-otp": t.booking.stageVerify,
+    submitting: t.booking.stageBooking,
+    confirmed: t.booking.stageDone,
+  };
   const queryClient = useQueryClient();
   const initialService =
     services.find((s) => s.id === preselectedServiceId) ?? null;
@@ -459,8 +461,8 @@ export function BookingFlow({
           <div className="mx-auto h-12 w-12 rounded-full bg-primary/10 grid place-items-center text-primary animate-pulse">
             <Clock className="h-6 w-6" />
           </div>
-          <p className="text-h3 text-foreground">Confirming your booking…</p>
-          <p className="text-sm text-muted-foreground">Just a moment.</p>
+          <p className="text-h3 text-foreground">{t.booking.confirmingTitle}</p>
+          <p className="text-sm text-muted-foreground">{t.booking.confirmingBody}</p>
         </div>
       )}
     </div>
@@ -480,17 +482,18 @@ function ServicePicker({
   currency: string;
   onPick: (s: PublicService) => void;
 }) {
+  const { t } = useT();
   if (services.length === 0) {
     return (
       <EmptyState
-        title="No services available yet"
-        description="This business hasn't published any bookable services. Check back later."
+        title={t.storefront.noServices}
+        description={t.storefront.noServicesBody}
       />
     );
   }
   return (
     <section className="space-y-3">
-      <SectionTitle>Choose a service</SectionTitle>
+      <SectionTitle>{t.booking.pickServiceTitle}</SectionTitle>
       <ul className="space-y-2">
         {services.map((s) => (
           <li key={s.id}>
@@ -536,19 +539,21 @@ function StaffPicker({
   selected: string;
   onPick: (id: string) => void;
 }) {
+  const { t } = useT();
   return (
     <section className="space-y-3">
       <div className="space-y-1">
-        <SectionTitle>Choose a staff member</SectionTitle>
+        <SectionTitle>{t.booking.pickStaffTitle}</SectionTitle>
         <p className="text-sm text-muted-foreground">
-          For <span className="font-medium text-foreground">{service.name}</span>
+          {t.booking.pickStaffSubtitle}{" "}
+          <span className="font-medium text-foreground">{service.name}</span>
         </p>
       </div>
       <ul className="grid sm:grid-cols-2 gap-2">
         <li>
           <StaffCard
-            label="Any available"
-            sub="We'll pick whoever is free at your chosen time"
+            label={t.booking.anyAvailable}
+            sub={t.booking.firstAvailable}
             active={selected === ANY_STAFF_ID}
             icon={<Sparkles className="h-5 w-5" />}
             onClick={() => onPick(ANY_STAFF_ID)}
@@ -654,15 +659,16 @@ function TimePicker({
   selected: string | null;
   onPick: (slot: PublicAvailabilitySlot) => void;
 }) {
+  const { t } = useT();
   const today = todayInZone(tenantTimezone);
   const maxDate = dateInZonePlusDays(tenantTimezone, 60);
 
   return (
     <section className="space-y-5">
       <div className="space-y-2">
-        <SectionTitle>Pick a date and time</SectionTitle>
+        <SectionTitle>{t.booking.pickTimeTitle}</SectionTitle>
         <p className="text-sm text-muted-foreground">
-          Times shown in {tenantTimezone}.
+          {t.booking.pickTimeSubtitle} {tenantTimezone}.
         </p>
       </div>
 
@@ -691,14 +697,14 @@ function TimePicker({
 
       {error instanceof ApiError && (
         <p className="text-sm text-destructive">
-          Could not load times: {error.message}
+          {t.booking.couldNotLoadTimes}: {error.message}
         </p>
       )}
 
       {!loading && !error && slots.length === 0 && (
         <EmptyState
-          title="Nothing free on this date"
-          description="Try another day from the strip above."
+          title={t.booking.noSlotsTitle}
+          description={t.booking.noSlotsBody}
         />
       )}
 
