@@ -16,6 +16,8 @@ export interface PublicTenantProfile {
   slug: string;
   businessType: string;
   timezone: string;
+  /** ISO 4217 currency code — drives price + earnings formatting on the storefront. */
+  currency: string;
   contactEmail: string | null;
   contactPhone: string | null;
   address: string | null;
@@ -34,6 +36,8 @@ export interface PublicService {
   durationMinutes: number;
   bufferBeforeMinutes: number;
   bufferAfterMinutes: number;
+  /** Price in minor currency units (e.g. cents). Null = "Ask for price". */
+  priceCents: number | null;
 }
 
 export interface PublicStaffMember {

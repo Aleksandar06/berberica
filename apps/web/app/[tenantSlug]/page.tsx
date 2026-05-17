@@ -9,6 +9,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { EmptyState } from "@/components/empty-state";
+import { formatPrice } from "@/lib/format/money";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -136,11 +137,16 @@ export default async function StorefrontHome({ params }: Props) {
                         </p>
                       )}
                     </div>
-                    <div className="flex flex-col items-end gap-2 shrink-0">
-                      <Badge variant="outline" className="tabular-nums">
+                    <div className="flex flex-col items-end gap-1 shrink-0 text-right">
+                      <span className="font-semibold text-foreground tabular-nums">
+                        {formatPrice(s.priceCents, profile.currency, {
+                          fallback: "—",
+                        })}
+                      </span>
+                      <span className="text-xs text-muted-foreground tabular-nums">
                         {s.durationMinutes} min
-                      </Badge>
-                      <ArrowRight className="h-4 w-4 text-muted-foreground" aria-hidden />
+                      </span>
+                      <ArrowRight className="h-4 w-4 text-muted-foreground mt-1" aria-hidden />
                     </div>
                   </div>
                 </Link>

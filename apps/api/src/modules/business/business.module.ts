@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 
+import { BusinessAnalyticsController } from "./business-analytics.controller";
 import { BusinessBrandingController } from "./business-branding.controller";
 import { BusinessProfileController } from "./business-profile.controller";
 import { BusinessSettingsController } from "./business-settings.controller";
@@ -15,6 +16,7 @@ import { BusinessSettingsController } from "./business-settings.controller";
     BusinessProfileController,
     BusinessSettingsController,
     BusinessBrandingController,
+    BusinessAnalyticsController,
   ],
 })
 export class BusinessModule {}

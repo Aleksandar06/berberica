@@ -5,6 +5,11 @@ import { Plus } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
 import { businessApi, type Service } from "@/lib/api/business";
+import {
+  centsToMajor,
+  formatPrice,
+  majorToCents,
+} from "@/lib/format/money";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -31,6 +36,11 @@ export default function BusinessServicesPage() {
     queryKey: ["business-services"],
     queryFn: () => businessApi.services.list(),
   });
+  const profile = useQuery({
+    queryKey: ["business-profile"],
+    queryFn: () => businessApi.profile.get(),
+  });
+  const currency = profile.data?.currency ?? "EUR";
 
   const [creating, setCreating] = useState(false);
 
@@ -137,12 +147,15 @@ export default function BusinessServicesPage() {
                   />
                 </div>
                 <div className="flex items-center justify-between gap-3 pt-1">
-                  <p className="text-sm text-muted-foreground tabular-nums">
-                    {s.durationMinutes} min ·{" "}
-                    <span className="text-xs">
-                      {s.bufferBeforeMinutes}b / {s.bufferAfterMinutes}a
+                  <div className="text-sm tabular-nums">
+                    <span className="font-semibold text-foreground">
+                      {formatPrice(s.priceCents, currency)}
                     </span>
-                  </p>
+                    <span className="text-muted-foreground">
+                      {" · "}
+                      {s.durationMinutes} min
+                    </span>
+                  </div>
                   {s.isActive && (
                     <Button
                       variant="ghost"
@@ -170,6 +183,9 @@ export default function BusinessServicesPage() {
                   Name
                 </th>
                 <th className="text-left px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Price
+                </th>
+                <th className="text-left px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                   Duration
                 </th>
                 <th className="text-left px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
@@ -193,6 +209,15 @@ export default function BusinessServicesPage() {
                       <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2 max-w-xl">
                         {s.description}
                       </p>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 tabular-nums align-top">
+                    {s.priceCents === null ? (
+                      <span className="text-muted-foreground">—</span>
+                    ) : (
+                      <span className="font-medium text-foreground">
+                        {formatPrice(s.priceCents, currency)}
+                      </span>
                     )}
                   </td>
                   <td className="px-4 py-3 tabular-nums align-top">
@@ -229,6 +254,7 @@ export default function BusinessServicesPage() {
       <ServiceCreateDialog
         open={creating}
         onOpenChange={setCreating}
+        currency={currency}
         onCreated={() => {
           setCreating(false);
           void qc.invalidateQueries({ queryKey: ["business-services"] });
@@ -242,30 +268,40 @@ function ServiceCreateDialog({
   open,
   onOpenChange,
   onCreated,
+  currency,
 }: {
   open: boolean;
   onOpenChange: (next: boolean) => void;
   onCreated: (s: Service) => void;
+  currency: string;
 }) {
   const toast = useToast();
+  // Price is captured as a free-text major-unit string so the user can
+  // type "25" or "9.99" naturally. Empty string = "Ask for price" (null
+  // on the wire). We parse + validate on submit.
   const [form, setForm] = useState({
     name: "",
     description: "",
     durationMinutes: 30,
     bufferBeforeMinutes: 0,
     bufferAfterMinutes: 0,
+    priceInput: "",
     isActive: true,
   });
   const create = useMutation({
-    mutationFn: () =>
-      businessApi.services.create({
+    mutationFn: () => {
+      const trimmed = form.priceInput.trim();
+      const priceCents = trimmed === "" ? null : majorToCents(Number(trimmed));
+      return businessApi.services.create({
         name: form.name,
         description: form.description || null,
         durationMinutes: form.durationMinutes,
         bufferBeforeMinutes: form.bufferBeforeMinutes,
         bufferAfterMinutes: form.bufferAfterMinutes,
+        priceCents,
         isActive: form.isActive,
-      }),
+      });
+    },
     onSuccess: (s) => {
       toast.success(`Service "${s.name}" created.`);
       onCreated(s);
@@ -276,6 +312,7 @@ function ServiceCreateDialog({
         durationMinutes: 30,
         bufferBeforeMinutes: 0,
         bufferAfterMinutes: 0,
+        priceInput: "",
         isActive: true,
       });
     },
@@ -320,6 +357,24 @@ function ServiceCreateDialog({
                 }
                 placeholder="30-minute precision cut."
               />
+            </div>
+            <div>
+              <Label htmlFor="price">Price ({currency})</Label>
+              <Input
+                id="price"
+                type="number"
+                inputMode="decimal"
+                min={0}
+                step="0.01"
+                placeholder="Leave empty for &quot;Ask for price&quot;"
+                value={form.priceInput}
+                onChange={(e) =>
+                  setForm({ ...form, priceInput: e.target.value })
+                }
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Per-appointment. Used to compute earnings on your dashboard.
+              </p>
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div>

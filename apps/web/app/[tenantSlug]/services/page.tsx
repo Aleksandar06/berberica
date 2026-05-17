@@ -2,9 +2,9 @@ import { ArrowRight, Scissors } from "lucide-react";
 import Link from "next/link";
 
 import { publicApi } from "@/lib/api/public";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/empty-state";
+import { formatPrice } from "@/lib/format/money";
 
 interface Props {
   params: Promise<{ tenantSlug: string }>;
@@ -18,7 +18,10 @@ interface Props {
  */
 export default async function ServicesPage({ params }: Props) {
   const { tenantSlug } = await params;
-  const services = await publicApi.getServices(tenantSlug);
+  const [profile, services] = await Promise.all([
+    publicApi.getProfile(tenantSlug),
+    publicApi.getServices(tenantSlug),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -57,11 +60,16 @@ export default async function ServicesPage({ params }: Props) {
                       </p>
                     )}
                   </div>
-                  <div className="flex flex-col items-end gap-2 shrink-0">
-                    <Badge variant="outline" className="tabular-nums">
+                  <div className="flex flex-col items-end gap-1 shrink-0 text-right tabular-nums">
+                    <span className="font-semibold text-foreground">
+                      {formatPrice(s.priceCents, profile.currency, {
+                        fallback: "—",
+                      })}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
                       {s.durationMinutes} min
-                    </Badge>
-                    <ArrowRight className="h-4 w-4 text-muted-foreground" aria-hidden />
+                    </span>
+                    <ArrowRight className="h-4 w-4 text-muted-foreground mt-1" aria-hidden />
                   </div>
                 </div>
               </Link>

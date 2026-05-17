@@ -15,6 +15,8 @@ export interface BusinessProfile {
   name: string;
   businessType: string;
   timezone: string;
+  /** ISO 4217 currency code (EUR, MKD, USD…). Used to format prices + earnings. */
+  currency: string;
   contactEmail: string | null;
   contactPhone: string | null;
   address: string | null;
@@ -58,7 +60,36 @@ export interface Service {
   durationMinutes: number;
   bufferBeforeMinutes: number;
   bufferAfterMinutes: number;
+  /** Price in minor currency units (e.g. cents). Null = "Ask for price". */
+  priceCents: number | null;
   isActive: boolean;
+}
+
+// =============================================================================
+// EARNINGS / ANALYTICS
+// =============================================================================
+
+export interface EarningsBucket {
+  count: number;
+  cents: number;
+}
+export interface EarningsBreakdown {
+  id: string;
+  count: number;
+  cents: number;
+}
+export interface EarningsResponse {
+  currency: string;
+  window: { from: string; to: string };
+  totals: {
+    earned: EarningsBucket;
+    projected: EarningsBucket;
+    lost: EarningsBucket;
+    other: EarningsBucket;
+  };
+  byService: Array<EarningsBreakdown & { name: string }>;
+  byStaff: Array<EarningsBreakdown & { displayName: string }>;
+  byDay: Array<{ date: string; earnedCents: number; projectedCents: number }>;
 }
 
 // =============================================================================
@@ -370,5 +401,15 @@ export const businessApi = {
         method: "PATCH",
         body: { status },
       }),
+  },
+  analytics: {
+    earnings: (params: { from?: string; to?: string } = {}) => {
+      const qs = new URLSearchParams();
+      if (params.from) qs.set("from", params.from);
+      if (params.to) qs.set("to", params.to);
+      return authedFetch<EarningsResponse>(
+        `/api/business/analytics/earnings${qs.toString() ? "?" + qs.toString() : ""}`,
+      );
+    },
   },
 };

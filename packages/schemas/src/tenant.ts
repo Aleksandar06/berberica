@@ -13,11 +13,18 @@ import {
 // TENANT (SUPER_ADMIN creates; TENANT_ADMIN may update non-slug fields)
 // ===========================================================================
 
+// ISO 4217 currency code — 3 uppercase letters. Used to format and
+// aggregate service prices and earnings reports across the tenant.
+export const currencyCodeSchema = z
+  .string()
+  .regex(/^[A-Z]{3}$/, "Currency must be a 3-letter ISO 4217 code (EUR, MKD, USD…)");
+
 export const tenantCreateInputSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(120),
   slug: slugSchema,
   businessType: z.string().trim().min(1, "Business type is required").max(64),
   timezone: timezoneSchema,
+  currency: currencyCodeSchema.optional(),
   contactEmail: emailSchema.optional(),
   contactPhone: phoneSchema.optional(),
   address: z.string().trim().max(500).optional(),
@@ -31,6 +38,7 @@ export const tenantUpdateInputSchema = z.object({
   name: z.string().trim().min(1).max(120).optional(),
   businessType: z.string().trim().min(1).max(64).optional(),
   timezone: timezoneSchema.optional(),
+  currency: currencyCodeSchema.optional(),
   contactEmail: emailSchema.nullable().optional(),
   contactPhone: phoneSchema.nullable().optional(),
   address: z.string().trim().max(500).nullable().optional(),

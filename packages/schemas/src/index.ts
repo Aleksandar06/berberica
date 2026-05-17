@@ -20,3 +20,4 @@ export * from "./availability";
 export * from "./booking";
 export * from "./admin";
 export * from "./verification";
+export * from "./analytics";

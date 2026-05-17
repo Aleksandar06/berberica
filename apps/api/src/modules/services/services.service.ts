@@ -60,6 +60,7 @@ export class ServicesService {
         durationMinutes: input.durationMinutes,
         bufferBeforeMinutes: input.bufferBeforeMinutes,
         bufferAfterMinutes: input.bufferAfterMinutes,
+        priceCents: input.priceCents ?? null,
         isActive: input.isActive,
       },
     });
@@ -100,6 +101,7 @@ export class ServicesService {
       data.bufferBeforeMinutes = input.bufferBeforeMinutes;
     if (input.bufferAfterMinutes !== undefined)
       data.bufferAfterMinutes = input.bufferAfterMinutes;
+    if (input.priceCents !== undefined) data.priceCents = input.priceCents;
     if (input.isActive !== undefined) data.isActive = input.isActive;
 
     const after = await this.prisma.service.update({ where: { id }, data });

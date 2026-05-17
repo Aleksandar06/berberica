@@ -50,6 +50,7 @@ import { DateStrip } from "@/components/booking/date-strip";
 import { OtpInput } from "@/components/booking/otp-input";
 import { SlotList } from "@/components/booking/slot-list";
 import { StageProgress } from "@/components/booking/stage-progress";
+import { formatPrice } from "@/lib/format/money";
 import {
   dateInZonePlusDays,
   todayInZone,
@@ -66,6 +67,8 @@ interface Props {
   tenantSlug: string;
   tenantName: string;
   tenantTimezone: string;
+  /** ISO 4217 currency code used to format service prices in the picker. */
+  tenantCurrency: string;
   services: PublicService[];
   staff: PublicStaffMember[];
   preselectedServiceId?: string;
@@ -116,6 +119,7 @@ export function BookingFlow({
   tenantSlug,
   tenantName,
   tenantTimezone,
+  tenantCurrency,
   services,
   staff,
   preselectedServiceId,
@@ -350,6 +354,7 @@ export function BookingFlow({
       {stage === "pick-service" && (
         <ServicePicker
           services={services}
+          currency={tenantCurrency}
           onPick={(s) => {
             setService(s);
             setStage("pick-staff");
@@ -468,9 +473,11 @@ export function BookingFlow({
 
 function ServicePicker({
   services,
+  currency,
   onPick,
 }: {
   services: PublicService[];
+  currency: string;
   onPick: (s: PublicService) => void;
 }) {
   if (services.length === 0) {
@@ -501,9 +508,14 @@ function ServicePicker({
                     </p>
                   )}
                 </div>
-                <Badge variant="outline" className="shrink-0">
-                  {s.durationMinutes} min
-                </Badge>
+                <div className="flex flex-col items-end gap-1 shrink-0 tabular-nums">
+                  <span className="font-semibold text-foreground">
+                    {formatPrice(s.priceCents, currency, { fallback: "—" })}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {s.durationMinutes} min
+                  </span>
+                </div>
               </div>
             </button>
           </li>

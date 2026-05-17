@@ -29,6 +29,7 @@ export class PublicTenantInfoController {
         slug: true,
         businessType: true,
         timezone: true,
+        currency: true,
         contactEmail: true,
         contactPhone: true,
         address: true,
@@ -56,6 +57,7 @@ export class PublicTenantInfoController {
         durationMinutes: true,
         bufferBeforeMinutes: true,
         bufferAfterMinutes: true,
+        priceCents: true,
       },
       orderBy: { name: "asc" },
     });

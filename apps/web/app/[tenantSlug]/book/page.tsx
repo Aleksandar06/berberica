@@ -26,6 +26,7 @@ export default async function BookPage({
       tenantSlug={tenantSlug}
       tenantName={profile.name}
       tenantTimezone={profile.timezone}
+      tenantCurrency={profile.currency}
       services={services}
       staff={staff}
       preselectedServiceId={preselectedServiceId}

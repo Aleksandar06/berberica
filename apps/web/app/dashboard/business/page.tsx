@@ -14,6 +14,7 @@ import { RescheduleSheet } from "@/components/reschedule-sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TodayQuickActions } from "@/components/dashboard/today-quick-actions";
 import { TodayTimeline } from "@/components/dashboard/today-timeline";
+import { formatMoney } from "@/lib/format/money";
 import { useAuth } from "@/lib/auth/auth-context";
 import { errorMessage, useToast } from "@/lib/ui/toast";
 
@@ -67,6 +68,11 @@ export default function BusinessOverview() {
         toDate: todayIso,
         pageSize: 100,
       }),
+  });
+  const earnings = useQuery({
+    queryKey: ["business-earnings-today", todayIso],
+    queryFn: () =>
+      businessApi.analytics.earnings({ from: todayIso, to: todayIso }),
   });
 
   const [rescheduling, setRescheduling] = useState<ReschedulingTarget | null>(
@@ -219,6 +225,32 @@ export default function BusinessOverview() {
               />
             </section>
           )}
+
+          {earnings.data &&
+            (earnings.data.totals.earned.cents > 0 ||
+              earnings.data.totals.projected.cents > 0) && (
+              <section className="rounded-2xl border border-border bg-card p-4">
+                <p className="text-[11px] uppercase tracking-wide font-semibold text-muted-foreground mb-3">
+                  Today&apos;s earnings
+                </p>
+                <dl className="grid grid-cols-2 gap-3 text-sm">
+                  <Glance
+                    label="Earned"
+                    value={formatMoney(
+                      earnings.data.totals.earned.cents,
+                      earnings.data.currency,
+                    )}
+                  />
+                  <Glance
+                    label="Projected"
+                    value={formatMoney(
+                      earnings.data.totals.projected.cents,
+                      earnings.data.currency,
+                    )}
+                  />
+                </dl>
+              </section>
+            )}
 
           {settings.data && (
             <section className="rounded-2xl border border-border bg-card p-4">
