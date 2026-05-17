@@ -1,0 +1,1381 @@
+<!doctype html>
+<html lang="mk">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Berberica — Презентација (scroll)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap&subset=cyrillic,latin"
+    />
+    <style>
+      /* ============================================================
+       * Berberica pitch deck — SCROLL variant.
+       *
+       * Apple-style: full-viewport sections that snap as you scroll.
+       * Content fades + lifts in on intersection. Same brand language
+       * and content as /deck.html (Macedonian, Kočani, UI mockups).
+       *
+       * Navigation:
+       *   • Scroll wheel / trackpad / touch → next section
+       *   • Right-side progress rail → click to jump
+       *   • ↓ ↑ / Page Down / Space → snap to next/prev section
+       * ============================================================ */
+      :root {
+        --bg: #faf7f9;
+        --fg: hsl(240 10% 12%);
+        --muted-fg: hsl(240 4% 46%);
+        --primary: hsl(340 82% 56%);
+        --primary-soft: hsl(340 82% 96%);
+        --primary-dark: hsl(340 82% 36%);
+        --success: hsl(152 60% 40%);
+        --warning: hsl(38 92% 50%);
+        --border: hsl(240 6% 90%);
+        --radius: 1.25rem;
+        --shadow-lg: 0 24px 80px -24px hsl(340 82% 36% / 0.18);
+        --shadow-md: 0 12px 28px -8px hsl(240 10% 12% / 0.1);
+      }
+
+      * { box-sizing: border-box; }
+      html, body {
+        margin: 0;
+        padding: 0;
+        background: var(--bg);
+        font-family:
+          "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+          system-ui, sans-serif;
+        color: var(--fg);
+        -webkit-font-smoothing: antialiased;
+        font-feature-settings: "ss01" 1, "calt" 1;
+      }
+      html {
+        scroll-behavior: smooth;
+        scroll-snap-type: y mandatory;
+      }
+      body {
+        scroll-snap-type: y mandatory;
+        overflow-x: hidden;
+      }
+
+      /* ---- Fixed corner mark ---- */
+      .mark {
+        position: fixed;
+        top: 1.5rem;
+        left: 1.75rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.65rem;
+        font-weight: 600;
+        font-size: 1.0625rem;
+        z-index: 50;
+        color: var(--fg);
+        text-decoration: none;
+        backdrop-filter: blur(8px);
+        padding: 0.4rem 0.65rem 0.4rem 0.4rem;
+        border-radius: 9999px;
+        background: hsl(0 0% 100% / 0.7);
+        border: 1px solid hsl(240 6% 90% / 0.7);
+      }
+      .mark-glyph {
+        height: 32px; width: 32px;
+        border-radius: 10px;
+        background: var(--primary);
+        color: #fff;
+        display: grid;
+        place-items: center;
+        font-size: 19px;
+        font-weight: 700;
+        line-height: 1;
+        padding-top: 1px;
+      }
+
+      /* ---- Right-side progress rail (Apple-style TOC) ---- */
+      .rail {
+        position: fixed;
+        right: 1.5rem;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 40;
+        display: flex;
+        flex-direction: column;
+        gap: 0.65rem;
+      }
+      .rail-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: hsl(240 4% 46% / 0.3);
+        cursor: pointer;
+        transition: all 220ms ease;
+        border: none;
+        padding: 0;
+      }
+      .rail-dot:hover { background: hsl(240 4% 46% / 0.6); transform: scale(1.3); }
+      .rail-dot.active {
+        background: var(--primary);
+        transform: scale(1.4);
+        box-shadow: 0 0 0 4px hsl(340 82% 56% / 0.15);
+      }
+
+      /* ---- Scroll hint (fades after first scroll) ---- */
+      .scroll-hint {
+        position: fixed;
+        bottom: 1.5rem;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 40;
+        font-size: 0.7rem;
+        color: var(--muted-fg);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        opacity: 1;
+        transition: opacity 400ms;
+        pointer-events: none;
+      }
+      .scroll-hint.hidden { opacity: 0; }
+      .scroll-hint-arrow {
+        display: inline-block;
+        animation: bounce 1.6s ease-in-out infinite;
+      }
+      @keyframes bounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(4px); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        html, body { scroll-behavior: auto; }
+        .scroll-hint-arrow { animation: none; }
+      }
+
+      /* ---- Section base ---- */
+      .section {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 4rem 4.5rem;
+        position: relative;
+        scroll-snap-align: start;
+        scroll-snap-stop: always;
+      }
+      .section-inner {
+        max-width: 1180px;
+        width: 100%;
+      }
+
+      /* ---- Fade/lift reveal on scroll ---- */
+      .reveal {
+        opacity: 0;
+        transform: translateY(28px);
+        transition:
+          opacity 700ms cubic-bezier(0.2, 0.65, 0.2, 1),
+          transform 700ms cubic-bezier(0.2, 0.65, 0.2, 1);
+      }
+      .reveal.in {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      .reveal-delay-1 { transition-delay: 80ms; }
+      .reveal-delay-2 { transition-delay: 160ms; }
+      .reveal-delay-3 { transition-delay: 240ms; }
+      .reveal-delay-4 { transition-delay: 320ms; }
+      @media (prefers-reduced-motion: reduce) {
+        .reveal { opacity: 1; transform: none; transition: none; }
+      }
+
+      /* ---- Typography ---- */
+      .eyebrow {
+        display: inline-block;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--primary);
+        background: var(--primary-soft);
+        padding: 0.4rem 0.9rem;
+        border-radius: 9999px;
+        margin-bottom: 1.5rem;
+      }
+      h1 {
+        font-size: clamp(2.2rem, 5vw, 4.25rem);
+        line-height: 1.05;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        margin: 0 0 1.25rem;
+      }
+      h2 {
+        font-size: clamp(1.5rem, 3vw, 2.5rem);
+        line-height: 1.15;
+        font-weight: 700;
+        letter-spacing: -0.015em;
+        margin: 0 0 1rem;
+      }
+      h3 { font-size: 1.125rem; font-weight: 700; margin: 0 0 0.45rem; }
+      .lead {
+        font-size: clamp(1.05rem, 1.45vw, 1.3rem);
+        line-height: 1.5;
+        color: var(--muted-fg);
+        max-width: 62ch;
+      }
+
+      /* ---- Section 1 (HERO) ---- */
+      .section-hero {
+        background:
+          radial-gradient(ellipse at top right, hsl(340 82% 56% / 0.14) 0%, transparent 55%),
+          radial-gradient(ellipse at bottom left, hsl(340 82% 56% / 0.07) 0%, transparent 60%),
+          var(--bg);
+      }
+      .hero-content { text-align: center; }
+      .hero-glyph {
+        height: 92px; width: 92px;
+        margin: 0 auto 2rem;
+        border-radius: 26px;
+        background: var(--primary);
+        color: #fff;
+        display: grid; place-items: center;
+        font-size: 56px; font-weight: 700; line-height: 1; padding-top: 2px;
+        box-shadow: var(--shadow-lg);
+      }
+      .hero-meta {
+        margin-top: 2.5rem;
+        display: flex; gap: 2.25rem; justify-content: center;
+        font-size: 0.9rem; color: var(--muted-fg);
+        flex-wrap: wrap;
+      }
+      .hero-meta strong { color: var(--fg); }
+
+      /* ---- Problem ---- */
+      .problem-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.25rem;
+        margin-top: 2rem;
+      }
+      .problem-card {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 1.6rem;
+        box-shadow: 0 1px 3px hsl(240 10% 12% / 0.04);
+      }
+      .problem-stat {
+        font-size: 2.75rem;
+        font-weight: 800;
+        color: var(--primary);
+        line-height: 1;
+        letter-spacing: -0.02em;
+        margin-bottom: 0.75rem;
+        font-variant-numeric: tabular-nums;
+      }
+      .problem-card p { margin: 0; color: var(--muted-fg); line-height: 1.5; font-size: 0.95rem; }
+
+      /* ---- Solution ---- */
+      .solution-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.25rem;
+        margin-top: 1.75rem;
+      }
+      .solution-card {
+        background: linear-gradient(155deg, hsl(340 82% 56% / 0.06), #fff 60%);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 1.6rem;
+      }
+      .solution-icon {
+        height: 42px; width: 42px;
+        border-radius: 12px;
+        background: var(--primary-soft);
+        color: var(--primary);
+        display: grid; place-items: center;
+        font-size: 1.35rem;
+        margin-bottom: 0.9rem;
+      }
+      .solution-card p { margin: 0; color: var(--muted-fg); line-height: 1.55; font-size: 0.95rem; }
+
+      /* ---- How it works (phone mockups) ---- */
+      .how-it-works {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2rem;
+        margin-top: 1.5rem;
+        align-items: start;
+      }
+      .step-block { text-align: center; }
+      .step-num {
+        display: inline-block;
+        width: 28px; height: 28px;
+        line-height: 28px;
+        border-radius: 50%;
+        background: var(--primary);
+        color: #fff;
+        font-weight: 700;
+        font-size: 0.85rem;
+        margin-bottom: 0.65rem;
+      }
+      .step-title { font-weight: 600; font-size: 1.05rem; margin-bottom: 0.4rem; }
+      .step-sub {
+        font-size: 0.85rem;
+        color: var(--muted-fg);
+        margin: 0 auto 1.25rem;
+        max-width: 28ch;
+        line-height: 1.4;
+      }
+      .phone {
+        width: 100%;
+        max-width: 240px;
+        margin: 0 auto;
+        background: #fff;
+        border: 8px solid #1a1a1f;
+        border-radius: 32px;
+        padding: 14px 10px 12px;
+        box-shadow: var(--shadow-md);
+        text-align: left;
+      }
+      .phone-notch {
+        width: 60%;
+        height: 6px;
+        background: #1a1a1f;
+        border-radius: 0 0 8px 8px;
+        margin: -14px auto 12px;
+      }
+      .phone-header {
+        font-size: 0.6rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted-fg);
+        font-weight: 600;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 10px;
+      }
+      .mock-service {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 9px 10px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        margin-bottom: 6px;
+        font-size: 0.7rem;
+      }
+      .mock-service.active { border-color: var(--primary); background: var(--primary-soft); }
+      .mock-service-name { font-weight: 600; font-size: 0.75rem; }
+      .mock-service-meta { color: var(--muted-fg); font-size: 0.65rem; margin-top: 1px; }
+      .mock-service-price {
+        font-weight: 700;
+        font-size: 0.78rem;
+        font-variant-numeric: tabular-nums;
+      }
+      .mock-date-strip {
+        display: flex;
+        gap: 4px;
+        overflow: hidden;
+        margin-bottom: 12px;
+      }
+      .mock-date {
+        flex: 1;
+        text-align: center;
+        padding: 6px 0;
+        border-radius: 8px;
+        background: #fff;
+        border: 1px solid var(--border);
+        font-size: 0.6rem;
+        font-weight: 600;
+      }
+      .mock-date.active {
+        background: var(--primary);
+        color: #fff;
+        border-color: var(--primary);
+      }
+      .mock-date-day {
+        font-size: 0.55rem;
+        text-transform: uppercase;
+        opacity: 0.7;
+      }
+      .mock-date-num { font-size: 0.85rem; font-weight: 700; }
+      .mock-slot-group {
+        font-size: 0.55rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted-fg);
+        margin: 6px 0 4px;
+      }
+      .mock-slots {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 4px;
+      }
+      .mock-slot {
+        text-align: center;
+        padding: 6px 0;
+        border-radius: 8px;
+        background: #fff;
+        border: 1px solid var(--border);
+        font-size: 0.7rem;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+      }
+      .mock-slot.active {
+        background: var(--primary);
+        color: #fff;
+        border-color: var(--primary);
+      }
+      .mock-confirm-icon {
+        height: 44px; width: 44px;
+        margin: 12px auto;
+        border-radius: 50%;
+        background: hsl(152 60% 40% / 0.15);
+        color: var(--success);
+        display: grid; place-items: center;
+        font-size: 22px;
+        font-weight: 800;
+      }
+      .mock-confirm-title {
+        text-align: center;
+        font-weight: 700;
+        font-size: 1rem;
+        margin-bottom: 8px;
+      }
+      .mock-confirm-body {
+        background: var(--primary-soft);
+        border-radius: 10px;
+        padding: 10px;
+        font-size: 0.7rem;
+        line-height: 1.5;
+        margin: 8px 4px;
+      }
+      .mock-confirm-body strong { display: block; margin-bottom: 4px; }
+      .mock-confirm-ref {
+        text-align: center;
+        font-size: 0.55rem;
+        font-family: monospace;
+        color: var(--muted-fg);
+        margin: 6px 0 2px;
+      }
+
+      /* ---- Demo ---- */
+      .demo { text-align: center; }
+      .demo-url {
+        margin-top: 1.5rem;
+        font-family: ui-monospace, "SFMono-Regular", monospace;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--primary);
+        background: var(--primary-soft);
+        padding: 0.85rem 1.5rem;
+        border-radius: 9999px;
+        display: inline-block;
+      }
+      .creds {
+        margin-top: 1.5rem;
+        display: inline-block;
+        text-align: left;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 1.1rem 1.5rem;
+        font-size: 0.95rem;
+        line-height: 1.7;
+      }
+      .creds code {
+        font-family: ui-monospace, "SFMono-Regular", monospace;
+        background: var(--primary-soft);
+        color: var(--primary-dark);
+        padding: 2px 8px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+      }
+
+      /* ---- Features (dashboard mockups) ---- */
+      .features-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-top: 1.5rem;
+        align-items: start;
+      }
+      .feature-mock {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 1rem;
+        box-shadow: var(--shadow-md);
+      }
+      .browser-chrome {
+        display: flex;
+        gap: 5px;
+        padding: 6px 10px;
+        background: hsl(240 5% 96%);
+        border-radius: 8px 8px 0 0;
+        margin: -1rem -1rem 0.85rem;
+        border-bottom: 1px solid var(--border);
+      }
+      .browser-dot { width: 9px; height: 9px; border-radius: 50%; }
+      .browser-dot:nth-child(1) { background: hsl(0 80% 56% / 0.6); }
+      .browser-dot:nth-child(2) { background: hsl(38 92% 50% / 0.7); }
+      .browser-dot:nth-child(3) { background: hsl(152 60% 40% / 0.7); }
+
+      .mock-today-time {
+        font-size: 2.25rem;
+        font-weight: 800;
+        line-height: 1;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -0.02em;
+      }
+      .mock-today-day {
+        font-size: 0.7rem;
+        color: var(--muted-fg);
+        margin-bottom: 0.85rem;
+      }
+      .mock-nextup-card {
+        background: linear-gradient(155deg, hsl(340 82% 56% / 0.08), #fff 60%);
+        border: 1px solid hsl(340 82% 56% / 0.2);
+        border-radius: 12px;
+        padding: 0.85rem;
+      }
+      .mock-nextup-label {
+        font-size: 0.6rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        font-weight: 700;
+        color: var(--muted-fg);
+        margin-bottom: 0.35rem;
+      }
+      .mock-nextup-customer {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+      }
+      .mock-avatar {
+        height: 42px; width: 42px;
+        border-radius: 50%;
+        background: var(--primary);
+        color: #fff;
+        display: grid; place-items: center;
+        font-weight: 700;
+        font-size: 0.95rem;
+      }
+      .mock-nextup-name { font-weight: 700; font-size: 1.05rem; line-height: 1.2; }
+      .mock-nextup-svc { color: var(--muted-fg); font-size: 0.78rem; }
+      .mock-nextup-when {
+        margin-top: 0.3rem;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--primary);
+        font-variant-numeric: tabular-nums;
+      }
+      .mock-nextup-actions { display: flex; gap: 0.5rem; margin-top: 0.8rem; }
+      .mock-btn {
+        padding: 5px 12px;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .mock-btn-primary { background: var(--primary); color: #fff; }
+      .mock-btn-ghost { background: transparent; color: var(--muted-fg); }
+
+      .mock-kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.5rem;
+        margin-bottom: 0.85rem;
+      }
+      .mock-kpi {
+        padding: 0.7rem 0.55rem;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: #fff;
+      }
+      .mock-kpi-label {
+        font-size: 0.55rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted-fg);
+        font-weight: 700;
+      }
+      .mock-kpi-value {
+        font-size: 1.1rem;
+        font-weight: 800;
+        margin-top: 4px;
+        font-variant-numeric: tabular-nums;
+      }
+      .mock-kpi-sub {
+        font-size: 0.55rem;
+        color: var(--muted-fg);
+        margin-top: 2px;
+      }
+      .mock-kpi-value.earned { color: var(--success); }
+      .mock-kpi-value.projected { color: var(--primary); }
+      .mock-kpi-value.lost { color: hsl(0 70% 50%); }
+      .mock-chart {
+        display: flex;
+        align-items: flex-end;
+        gap: 4px;
+        height: 80px;
+        padding-top: 6px;
+        border-top: 1px solid var(--border);
+      }
+      .mock-bar {
+        flex: 1;
+        display: flex;
+        flex-direction: column-reverse;
+        border-radius: 4px;
+        overflow: hidden;
+        background: hsl(240 5% 96%);
+      }
+      .mock-bar-earned { background: var(--success); }
+      .mock-bar-projected { background: hsl(340 82% 56% / 0.5); }
+      .mock-chart-label {
+        font-size: 0.55rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted-fg);
+        font-weight: 700;
+        margin-bottom: 0.45rem;
+      }
+
+      /* ---- Pricing ---- */
+      .pricing {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        margin-top: 1.5rem;
+      }
+      .tier {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+      }
+      .tier-featured {
+        background: linear-gradient(155deg, var(--primary), var(--primary-dark));
+        color: #fff;
+        border-color: transparent;
+        box-shadow: var(--shadow-lg);
+        transform: translateY(-10px);
+      }
+      .tier-featured .tier-price,
+      .tier-featured .tier-name { color: #fff; }
+      .tier-featured ul li { color: hsl(0 0% 100% / 0.9); }
+      .tier-featured ul li::before { background: hsl(0 0% 100% / 0.25); }
+      .tier-badge {
+        align-self: flex-start;
+        background: hsl(0 0% 100% / 0.25);
+        color: #fff;
+        padding: 0.2rem 0.55rem;
+        border-radius: 9999px;
+        font-size: 0.6rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 0.7rem;
+      }
+      .tier-name {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--muted-fg);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 0.5rem;
+      }
+      .tier-price {
+        font-size: 2.3rem;
+        font-weight: 800;
+        line-height: 1;
+        letter-spacing: -0.02em;
+        margin-bottom: 0.2rem;
+        font-variant-numeric: tabular-nums;
+      }
+      .tier-price small {
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: var(--muted-fg);
+      }
+      .tier-featured .tier-price small { color: hsl(0 0% 100% / 0.8); }
+      .tier-sub { font-size: 0.85rem; color: var(--muted-fg); margin-bottom: 1.1rem; }
+      .tier-featured .tier-sub { color: hsl(0 0% 100% / 0.85); }
+      .tier ul {
+        list-style: none;
+        padding: 0; margin: 0;
+        font-size: 0.85rem;
+        line-height: 1.6;
+        color: var(--muted-fg);
+      }
+      .tier ul li {
+        position: relative;
+        padding-left: 1.4rem;
+        margin-bottom: 0.35rem;
+      }
+      .tier ul li::before {
+        content: "";
+        position: absolute;
+        left: 0.25rem; top: 0.55rem;
+        width: 0.45rem; height: 0.45rem;
+        border-radius: 50%;
+        background: var(--primary-soft);
+        border: 2px solid var(--primary);
+        box-sizing: border-box;
+      }
+
+      /* ---- Roadmap ---- */
+      .roadmap {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.25rem;
+        margin-top: 1.75rem;
+      }
+      .roadmap-col h3 {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--muted-fg);
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+      }
+      .roadmap-col h3 .dot {
+        display: inline-block;
+        width: 0.5rem; height: 0.5rem;
+        border-radius: 50%;
+        background: var(--success);
+        margin-right: 0.35rem;
+        vertical-align: middle;
+      }
+      .roadmap-col h3 .dot.next { background: var(--warning); }
+      .roadmap-col h3 .dot.future { background: var(--primary); }
+      .roadmap-col ul {
+        list-style: none;
+        padding: 0; margin: 0;
+        line-height: 1.7;
+      }
+      .roadmap-col li {
+        padding: 0.3rem 0;
+        font-size: 0.9rem;
+        border-bottom: 1px solid var(--border);
+      }
+      .roadmap-col li:last-child { border-bottom: none; }
+
+      /* ---- Closing ---- */
+      .section-closing {
+        background:
+          radial-gradient(ellipse at top left, hsl(340 82% 56% / 0.12) 0%, transparent 55%),
+          radial-gradient(ellipse at bottom right, hsl(20 90% 65% / 0.12) 0%, transparent 60%),
+          var(--bg);
+      }
+      .closing { text-align: center; }
+      .closing-glyph {
+        height: 80px; width: 80px;
+        margin: 0 auto 1.5rem;
+        border-radius: 24px;
+        background: var(--primary);
+        color: #fff;
+        display: grid; place-items: center;
+        font-size: 50px; font-weight: 700; line-height: 1; padding-top: 2px;
+        box-shadow: var(--shadow-lg);
+      }
+      .thank-you {
+        font-size: clamp(2.5rem, 6vw, 5rem);
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        line-height: 1;
+        margin-bottom: 0.75rem;
+      }
+      .thank-you-mk { color: var(--primary); }
+      .closing-links {
+        margin-top: 2.25rem;
+        display: flex;
+        gap: 1.25rem;
+        justify-content: center;
+        font-size: 0.95rem;
+        flex-wrap: wrap;
+      }
+      .closing-links a {
+        color: var(--fg);
+        text-decoration: none;
+        border-bottom: 1px solid var(--primary);
+        padding-bottom: 1px;
+      }
+
+      .orb {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(80px);
+        opacity: 0.25;
+        pointer-events: none;
+      }
+
+      @media (max-width: 900px) {
+        .section { padding: 4rem 1.5rem; }
+        .problem-grid,
+        .solution-grid,
+        .how-it-works,
+        .features-grid,
+        .pricing,
+        .roadmap { grid-template-columns: 1fr !important; }
+        .tier-featured { transform: none; }
+        .rail { right: 0.5rem; }
+      }
+    </style>
+  </head>
+  <body>
+    <a href="https://web-production-42e42.up.railway.app" class="mark">
+      <span class="mark-glyph">б</span>
+      Berberica
+    </a>
+
+    <!-- Right-side TOC rail -->
+    <nav class="rail" aria-label="Navigacija">
+      <button class="rail-dot active" data-target="0" title="Berberica"></button>
+      <button class="rail-dot" data-target="1" title="Проблемот"></button>
+      <button class="rail-dot" data-target="2" title="Решението"></button>
+      <button class="rail-dot" data-target="3" title="Како функционира"></button>
+      <button class="rail-dot" data-target="4" title="Демо"></button>
+      <button class="rail-dot" data-target="5" title="Клучни функции"></button>
+      <button class="rail-dot" data-target="6" title="Цени"></button>
+      <button class="rail-dot" data-target="7" title="Што следи"></button>
+      <button class="rail-dot" data-target="8" title="Благодариме"></button>
+    </nav>
+
+    <!-- Scroll hint -->
+    <div class="scroll-hint" id="scroll-hint">
+      <span>скролај</span>
+      <span class="scroll-hint-arrow">↓</span>
+    </div>
+
+    <!-- ============================================================
+         SECTIONS — each is a snap target, scroll to advance.
+         ============================================================ -->
+
+    <!-- 1. HERO -->
+    <section class="section section-hero" id="s0">
+      <div class="orb" style="top: -100px; right: -50px; height: 380px; width: 380px; background: hsl(340 82% 56%);"></div>
+      <div class="orb" style="bottom: -80px; left: -60px; height: 320px; width: 320px; background: hsl(20 90% 65%);"></div>
+      <div class="section-inner hero-content">
+        <div class="hero-glyph reveal">б</div>
+        <h1 class="reveal reveal-delay-1">Berberica</h1>
+        <p class="lead reveal reveal-delay-2" style="margin: 0 auto;">
+          Резервации без неред и допишување — една платформа за берберници,
+          салони и студија за убавина.
+        </p>
+        <div class="hero-meta reveal reveal-delay-3">
+          <span><strong>Хакатон 2026</strong></span>
+          <span aria-hidden>·</span>
+          <span>Изработено во <strong>Кочани</strong></span>
+          <span aria-hidden>·</span>
+          <span>Достапно на <strong>македонски + English</strong></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. PROBLEM -->
+    <section class="section" id="s1">
+      <div class="section-inner">
+        <span class="eyebrow reveal">Проблемот</span>
+        <h1 class="reveal reveal-delay-1">Резервациите се сè уште скршени.</h1>
+        <p class="lead reveal reveal-delay-2">
+          Индустрија вредна милијарди евра годишно — а закажување шишање сè
+          уште се прави преку телефон и Instagram пораки.
+        </p>
+        <div class="problem-grid">
+          <div class="problem-card reveal reveal-delay-2">
+            <div class="problem-stat">73%</div>
+            <h3>Резервации преку телефон / DM</h3>
+            <p>
+              Клиентите ја губат паузата на работа обидувајќи се да го фатат
+              местото на врска. Местата го губат денот одговарајќи.
+            </p>
+          </div>
+          <div class="problem-card reveal reveal-delay-3">
+            <div class="problem-stat">€2K+</div>
+            <h3>Изгубени по стол, месечно</h3>
+            <p>
+              Не-дојдени клиенти, двојни резервации и пропуштени термини
+              тивко ја јадат маржата на секое мало место.
+            </p>
+          </div>
+          <div class="problem-card reveal reveal-delay-4">
+            <div class="problem-stat">0</div>
+            <h3>Сопственици што знаат колку заработиле минатата недела</h3>
+            <p>
+              Без табла, без агрегација, без „која услуга донесе најмногу".
+              Се претпоставува, или прашуваш сметководителот во март.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. SOLUTION -->
+    <section class="section" id="s2">
+      <div class="section-inner">
+        <span class="eyebrow reveal">Решението</span>
+        <h1 class="reveal reveal-delay-1">Една платформа. Три завршени задачи.</h1>
+        <p class="lead reveal reveal-delay-2">
+          Berberica е страница за клиентите, распоред за тимот и финансиски
+          преглед за сопственикот — на едно место.
+        </p>
+        <div class="solution-grid">
+          <div class="solution-card reveal reveal-delay-2">
+            <div class="solution-icon">🏪</div>
+            <h3>Страница за 60 секунди</h3>
+            <p>
+              Секое место добива брендирана страница за резервации со свое
+              лого, бои и адреса — на
+              <code style="font-size: 0.85em;">/твоето-име</code>.
+            </p>
+          </div>
+          <div class="solution-card reveal reveal-delay-3">
+            <div class="solution-icon">📱</div>
+            <h3>Резервации што работат</h3>
+            <p>
+              Слободни термини во реално време, верификација преку имејл за
+              гости, без двојни резервации. Mobile-first — текот изгледа
+              како апликација на телефон.
+            </p>
+          </div>
+          <div class="solution-card reveal reveal-delay-4">
+            <div class="solution-icon">💰</div>
+            <h3>Заработка на прв тап</h3>
+            <p>
+              „Колку заработивме оваа недела? Кој е најуспешен?"
+              Одговорено со еден тап од почетниот екран.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. HOW IT WORKS -->
+    <section class="section" id="s3">
+      <div class="section-inner">
+        <span class="eyebrow reveal">Како функционира</span>
+        <h1 class="reveal reveal-delay-1">
+          Од „каде си?" до „благодарам, ќе се видиме во 14:30".
+        </h1>
+        <p class="lead reveal reveal-delay-2">
+          Целиот тек на резервирање — три тапа на телефонот, без чекање некој
+          да потврди.
+        </p>
+        <div class="how-it-works">
+          <div class="step-block reveal reveal-delay-2">
+            <div class="step-num">1</div>
+            <div class="step-title">Избери услуга</div>
+            <p class="step-sub">Сите услуги со цена и времетраење, во еден поглед.</p>
+            <div class="phone">
+              <div class="phone-notch"></div>
+              <div class="phone-header">Elite Barbers · Услуги</div>
+              <div class="mock-service active">
+                <div>
+                  <div class="mock-service-name">Класично шишање</div>
+                  <div class="mock-service-meta">30 мин</div>
+                </div>
+                <div class="mock-service-price">€12</div>
+              </div>
+              <div class="mock-service">
+                <div>
+                  <div class="mock-service-name">Hot-Towel Shave</div>
+                  <div class="mock-service-meta">45 мин</div>
+                </div>
+                <div class="mock-service-price">€18</div>
+              </div>
+              <div class="mock-service">
+                <div>
+                  <div class="mock-service-name">Брада</div>
+                  <div class="mock-service-meta">20 мин</div>
+                </div>
+                <div class="mock-service-price">€8</div>
+              </div>
+              <div class="mock-service">
+                <div>
+                  <div class="mock-service-name">Skin Fade</div>
+                  <div class="mock-service-meta">45 мин</div>
+                </div>
+                <div class="mock-service-price">€15</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="step-block reveal reveal-delay-3">
+            <div class="step-num">2</div>
+            <div class="step-title">Избери термин</div>
+            <p class="step-sub">
+              Само слободните слотови. Без двојни резервации, без чекање за потврда.
+            </p>
+            <div class="phone">
+              <div class="phone-notch"></div>
+              <div class="phone-header">Среда · 21 мај</div>
+              <div class="mock-date-strip">
+                <div class="mock-date"><div class="mock-date-day">пон</div><div class="mock-date-num">19</div></div>
+                <div class="mock-date"><div class="mock-date-day">вто</div><div class="mock-date-num">20</div></div>
+                <div class="mock-date active"><div class="mock-date-day">сре</div><div class="mock-date-num">21</div></div>
+                <div class="mock-date"><div class="mock-date-day">чет</div><div class="mock-date-num">22</div></div>
+                <div class="mock-date"><div class="mock-date-day">пет</div><div class="mock-date-num">23</div></div>
+              </div>
+              <div class="mock-slot-group">Утро</div>
+              <div class="mock-slots">
+                <div class="mock-slot">09:00</div>
+                <div class="mock-slot">09:30</div>
+                <div class="mock-slot">10:00</div>
+              </div>
+              <div class="mock-slot-group">Попладне</div>
+              <div class="mock-slots">
+                <div class="mock-slot">14:00</div>
+                <div class="mock-slot active">14:30</div>
+                <div class="mock-slot">15:00</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="step-block reveal reveal-delay-4">
+            <div class="step-num">3</div>
+            <div class="step-title">Резервирано</div>
+            <p class="step-sub">
+              Шест-цифрен код по имејл, потврда веднаш, термин во календарот.
+            </p>
+            <div class="phone">
+              <div class="phone-notch"></div>
+              <div class="phone-header" style="text-align: center;">Готово</div>
+              <div class="mock-confirm-icon">✓</div>
+              <div class="mock-confirm-title">Резервирано!</div>
+              <div class="mock-confirm-body">
+                <strong>Класично шишање</strong>
+                Среда, 21 мај · 14:30<br />
+                со Marko Petrov · 30 мин
+              </div>
+              <div class="mock-confirm-ref">бр. 9a3f-21be</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. LIVE DEMO -->
+    <section class="section" id="s4">
+      <div class="section-inner demo">
+        <span class="eyebrow reveal">Жива демонстрација</span>
+        <h1 class="reveal reveal-delay-1">Пробај сега.</h1>
+        <p class="lead reveal reveal-delay-2" style="margin: 0 auto;">
+          Реални продукциски податоци. Постави услуга, резервирај термин,
+          означи го клиентот како присутен — гледај како приходот се појавува
+          на таблата.
+        </p>
+        <div class="demo-url reveal reveal-delay-3">
+          web-production-42e42.up.railway.app/elite-barbers
+        </div>
+        <div class="creds reveal reveal-delay-4">
+          <strong>Или најави се како сопственик на местото:</strong><br />
+          имејл&nbsp;&nbsp;<code>admin@elite-barbers.test</code><br />
+          лозинка <code>dev-password-123</code>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. FEATURES -->
+    <section class="section" id="s5">
+      <div class="section-inner">
+        <span class="eyebrow reveal">Што е веќе изградено</span>
+        <h1 class="reveal reveal-delay-1">Подготвено за продукција, од прв ден.</h1>
+        <p class="lead reveal reveal-delay-2">
+          Не е прототип — секоја функција подолу работи во живата апликација
+          токму сега.
+        </p>
+        <div class="features-grid">
+          <div class="feature-mock reveal reveal-delay-2">
+            <div class="browser-chrome">
+              <span class="browser-dot"></span>
+              <span class="browser-dot"></span>
+              <span class="browser-dot"></span>
+            </div>
+            <div class="mock-today-time">14:22</div>
+            <div class="mock-today-day">среда, 21 мај</div>
+            <div class="mock-nextup-card">
+              <div class="mock-nextup-label">Следно · за 8 мин</div>
+              <div class="mock-nextup-customer">
+                <div class="mock-avatar">БС</div>
+                <div>
+                  <div class="mock-nextup-name">Бојан Стојановски</div>
+                  <div class="mock-nextup-svc">Класично шишање · Marko Petrov</div>
+                  <div class="mock-nextup-when">14:30 – 15:00 · 30 мин</div>
+                </div>
+              </div>
+              <div class="mock-nextup-actions">
+                <span class="mock-btn mock-btn-primary">✓ Присутен</span>
+                <span class="mock-btn mock-btn-ghost">✗ Не дојде</span>
+              </div>
+            </div>
+            <h3 style="margin-top: 0.85rem; font-size: 0.95rem;">Денешен распоред на еден екран</h3>
+            <p style="margin: 0.25rem 0 0; color: var(--muted-fg); font-size: 0.85rem; line-height: 1.45;">
+              Жив часовник, претстоен клиент, еден тап за „присутен" или
+              „завршено" — приходот веднаш паѓа во таблата за заработка.
+            </p>
+          </div>
+
+          <div class="feature-mock reveal reveal-delay-3">
+            <div class="browser-chrome">
+              <span class="browser-dot"></span>
+              <span class="browser-dot"></span>
+              <span class="browser-dot"></span>
+            </div>
+            <div class="mock-kpi-grid">
+              <div class="mock-kpi">
+                <div class="mock-kpi-label">Заработено</div>
+                <div class="mock-kpi-value earned">€847</div>
+                <div class="mock-kpi-sub">42 завршени</div>
+              </div>
+              <div class="mock-kpi">
+                <div class="mock-kpi-label">Очекувано</div>
+                <div class="mock-kpi-value projected">€1,240</div>
+                <div class="mock-kpi-sub">58 претстојни</div>
+              </div>
+              <div class="mock-kpi">
+                <div class="mock-kpi-label">Изгубено</div>
+                <div class="mock-kpi-value lost">€124</div>
+                <div class="mock-kpi-sub">8 откажани</div>
+              </div>
+            </div>
+            <div class="mock-chart-label">Дневен приход — 14 дена</div>
+            <div class="mock-chart">
+              <div class="mock-bar" style="height: 30%;"><div class="mock-bar-earned" style="height: 100%;"></div></div>
+              <div class="mock-bar" style="height: 55%;"><div class="mock-bar-earned" style="height: 80%;"></div></div>
+              <div class="mock-bar" style="height: 40%;"><div class="mock-bar-earned" style="height: 100%;"></div></div>
+              <div class="mock-bar" style="height: 65%;"><div class="mock-bar-earned" style="height: 100%;"></div></div>
+              <div class="mock-bar" style="height: 80%;"><div class="mock-bar-earned" style="height: 75%;"></div></div>
+              <div class="mock-bar" style="height: 60%;"><div class="mock-bar-earned" style="height: 90%;"></div></div>
+              <div class="mock-bar" style="height: 45%;"><div class="mock-bar-earned" style="height: 100%;"></div></div>
+              <div class="mock-bar" style="height: 70%;"><div class="mock-bar-earned" style="height: 65%;"></div></div>
+              <div class="mock-bar" style="height: 85%;"><div class="mock-bar-projected" style="height: 100%;"></div></div>
+              <div class="mock-bar" style="height: 55%;"><div class="mock-bar-projected" style="height: 100%;"></div></div>
+              <div class="mock-bar" style="height: 70%;"><div class="mock-bar-projected" style="height: 100%;"></div></div>
+              <div class="mock-bar" style="height: 90%;"><div class="mock-bar-projected" style="height: 100%;"></div></div>
+              <div class="mock-bar" style="height: 75%;"><div class="mock-bar-projected" style="height: 100%;"></div></div>
+              <div class="mock-bar" style="height: 60%;"><div class="mock-bar-projected" style="height: 100%;"></div></div>
+            </div>
+            <h3 style="margin-top: 0.85rem; font-size: 0.95rem;">Заработка на еден поглед</h3>
+            <p style="margin: 0.25rem 0 0; color: var(--muted-fg); font-size: 0.85rem; line-height: 1.45;">
+              Завршено наспроти очекувано наспроти изгубено. Топ услуги, топ
+              членови. Дневен графикон.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. PRICING -->
+    <section class="section" id="s6">
+      <div class="section-inner">
+        <span class="eyebrow reveal">Бизнис модел</span>
+        <h1 class="reveal reveal-delay-1">Претплата по место.</h1>
+        <p class="lead reveal reveal-delay-2">
+          Бесплатно за почеток. Плаќаш кога ќе ти треба повеќе. Никаков
+          процент по резервација — местото задржува 100% од она што го плаќа
+          клиентот.
+        </p>
+        <div class="pricing">
+          <div class="tier reveal reveal-delay-2">
+            <div class="tier-name">Старт</div>
+            <div class="tier-price">€0<small> / месечно</small></div>
+            <div class="tier-sub">Започни бесплатно</div>
+            <ul>
+              <li>1 член на тимот</li>
+              <li>До 30 резервации / месечно</li>
+              <li>Брендирана страница</li>
+              <li>Верификација преку имејл</li>
+              <li>Поддршка во заедницата</li>
+            </ul>
+          </div>
+          <div class="tier tier-featured reveal reveal-delay-3">
+            <span class="tier-badge">Најпопуларно</span>
+            <div class="tier-name" style="color: hsl(0 0% 100% / 0.85);">Pro</div>
+            <div class="tier-price">€19<small> / месечно</small></div>
+            <div class="tier-sub">За места со 2-5 столчиња</div>
+            <ul>
+              <li>Неограничен тим</li>
+              <li>Неограничени резервации</li>
+              <li>Целосна табла за заработка</li>
+              <li>Брендирање (лого + бои)</li>
+              <li>Имејл + SMS известувања</li>
+              <li>Приоритетна поддршка</li>
+            </ul>
+          </div>
+          <div class="tier reveal reveal-delay-4">
+            <div class="tier-name">Студио</div>
+            <div class="tier-price">€49<small> / месечно</small></div>
+            <div class="tier-sub">За салони со повеќе локации</div>
+            <ul>
+              <li>Сè од Pro</li>
+              <li>Поддршка за повеќе локации</li>
+              <li>Напредна аналитика + извоз</li>
+              <li>API за интеграции</li>
+              <li>Личен онбординг</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8. ROADMAP -->
+    <section class="section" id="s7">
+      <div class="section-inner">
+        <span class="eyebrow reveal">Што следи</span>
+        <h1 class="reveal reveal-delay-1">План.</h1>
+        <p class="lead reveal reveal-delay-2">
+          Не е готово. Еве каде одиме од хакатонот до вистински производ.
+        </p>
+        <div class="roadmap">
+          <div class="roadmap-col reveal reveal-delay-2">
+            <h3><span class="dot"></span>Веќе испорачано</h3>
+            <ul>
+              <li>Multi-tenant страница</li>
+              <li>Движок за резервации во реално време</li>
+              <li>Верификација преку имејл + OTP</li>
+              <li>Табла за заработка</li>
+              <li>Брендирање по место</li>
+              <li>EN + MK локализација</li>
+            </ul>
+          </div>
+          <div class="roadmap-col reveal reveal-delay-3">
+            <h3><span class="dot next"></span>Следните 30 дена</h3>
+            <ul>
+              <li>SMS потсетници 24ч однапред</li>
+              <li>Stripe / интеграција за плаќање</li>
+              <li>Оценки и осврти од клиенти</li>
+              <li>Извоз во календар (.ics)</li>
+              <li>„Заборавена лозинка" тек</li>
+            </ul>
+          </div>
+          <div class="roadmap-col reveal reveal-delay-4">
+            <h3><span class="dot future"></span>Иднина</h3>
+            <ul>
+              <li>Програма за лојалност</li>
+              <li>Walk-in редица</li>
+              <li>Маркетинг кампањи</li>
+              <li>Native iOS + Android апликации</li>
+              <li>Инвентар / малопродажба</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 9. CLOSING -->
+    <section class="section section-closing" id="s8">
+      <div class="orb" style="top: -50px; left: 20%; height: 320px; width: 320px; background: hsl(340 82% 56%);"></div>
+      <div class="orb" style="bottom: 10%; right: 5%; height: 260px; width: 260px; background: hsl(20 90% 65%);"></div>
+      <div class="section-inner closing">
+        <div class="closing-glyph reveal">б</div>
+        <div class="thank-you reveal reveal-delay-1">
+          <span class="thank-you-mk">Благодариме.</span>
+        </div>
+        <p class="lead reveal reveal-delay-2" style="margin: 1rem auto 0;">
+          Прашања? Имаме одговори. (А ако немаме — ќе ги испорачаме во
+          следниот спринт.)
+        </p>
+        <div class="closing-links reveal reveal-delay-3">
+          <a href="https://web-production-42e42.up.railway.app">
+            web-production-42e42.up.railway.app
+          </a>
+          <a href="https://web-production-42e42.up.railway.app/elite-barbers">
+            /elite-barbers (демо)
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <script>
+      // ============================================================
+      // Reveal-on-scroll + active rail dot tracking.
+      // Pure IntersectionObserver — no animation library.
+      // ============================================================
+      const sections = document.querySelectorAll(".section");
+      const dots = document.querySelectorAll(".rail-dot");
+      const scrollHint = document.getElementById("scroll-hint");
+
+      // Reveal observer — triggers entry animations as content enters.
+      const revealObs = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((e) => {
+            if (e.isIntersecting) {
+              e.target.classList.add("in");
+              // Don't unobserve — let reveals replay if user scrolls back up.
+            } else {
+              // Only un-reveal if it's well off screen, to avoid jank when
+              // a section is partially visible at the edge.
+              const rect = e.boundingClientRect;
+              if (rect.top > window.innerHeight || rect.bottom < 0) {
+                e.target.classList.remove("in");
+              }
+            }
+          });
+        },
+        { threshold: 0.15 },
+      );
+      document.querySelectorAll(".reveal").forEach((el) => revealObs.observe(el));
+
+      // Active section tracker — highlight the right dot as user scrolls.
+      const sectionObs = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((e) => {
+            if (e.isIntersecting) {
+              const idx = Array.from(sections).indexOf(e.target);
+              dots.forEach((d, i) => d.classList.toggle("active", i === idx));
+            }
+          });
+        },
+        { threshold: 0.5 },
+      );
+      sections.forEach((s) => sectionObs.observe(s));
+
+      // Click rail dots → smooth scroll.
+      dots.forEach((d, i) => {
+        d.addEventListener("click", () => {
+          sections[i].scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      });
+
+      // Keyboard: arrows + space + page-up/down advance one section.
+      function goRel(delta) {
+        const active = Array.from(dots).findIndex((d) => d.classList.contains("active"));
+        const next = Math.max(0, Math.min(sections.length - 1, active + delta));
+        sections[next].scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+      document.addEventListener("keydown", (e) => {
+        if (["ArrowDown", "PageDown", " "].includes(e.key)) {
+          goRel(1); e.preventDefault();
+        } else if (["ArrowUp", "PageUp"].includes(e.key)) {
+          goRel(-1); e.preventDefault();
+        } else if (e.key === "Home") {
+          sections[0].scrollIntoView({ behavior: "smooth" });
+        } else if (e.key === "End") {
+          sections[sections.length - 1].scrollIntoView({ behavior: "smooth" });
+        } else if (e.key.toLowerCase() === "f") {
+          if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+          else document.exitFullscreen();
+        }
+      });
+
+      // Hide the "scroll" hint after the user has moved past the first section.
+      let hintHidden = false;
+      window.addEventListener(
+        "scroll",
+        () => {
+          if (!hintHidden && window.scrollY > window.innerHeight * 0.5) {
+            scrollHint.classList.add("hidden");
+            hintHidden = true;
+          }
+        },
+        { passive: true },
+      );
+    </script>
+  </body>
+</html>
