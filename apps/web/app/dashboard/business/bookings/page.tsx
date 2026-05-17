@@ -2,8 +2,8 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { DateTime } from "luxon";
-import { CalendarDays, User } from "lucide-react";
-import { useState } from "react";
+import { CalendarDays, CalendarRange, List, X } from "lucide-react";
+import { useMemo, useState } from "react";
 
 import { businessApi, type BusinessBooking } from "@/lib/api/business";
 import { Button } from "@/components/ui/button";
@@ -17,13 +17,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useConfirm } from "@/components/confirm-dialog";
 import { EmptyState } from "@/components/empty-state";
-import { PageHeading } from "@/components/dashboard/page-heading";
+import { BookingsListView } from "@/components/dashboard/bookings-list-view";
+import { BookingsWeekCalendar } from "@/components/dashboard/bookings-week-calendar";
+import { PageHeader } from "@/components/page-header";
 import { RescheduleSheet } from "@/components/reschedule-sheet";
-import { StatusBadge } from "@/components/dashboard/status-badge";
 import { useAuth } from "@/lib/auth/auth-context";
 import { errorMessage, useToast } from "@/lib/ui/toast";
+import { cn } from "@/lib/utils";
 
 interface ReschedulingTarget {
   id: string;
@@ -32,6 +35,10 @@ interface ReschedulingTarget {
   staffMemberId: string;
   staffName: string;
 }
+
+type View = "list" | "calendar";
+
+const TENANT_TIMEZONE = "Europe/Skopje"; // TODO: pull from profile when timezone-in-shell lands
 
 export default function BusinessBookingsPage() {
   const toast = useToast();
@@ -42,26 +49,53 @@ export default function BusinessBookingsPage() {
     (m) => m.role === "TENANT_ADMIN" || m.role === "STAFF",
   );
   const tenantSlug = activeBusiness?.tenantSlug ?? "";
-  const tenantTimezone = "Europe/Skopje"; // TODO: pull from profile when timezone-in-shell lands
 
+  const [view, setView] = useState<View>("list");
   const [filters, setFilters] = useState({
     fromDate: "",
     toDate: "",
     staffMemberId: "",
     status: "",
   });
-  const [rescheduling, setRescheduling] = useState<ReschedulingTarget | null>(null);
+  const [weekAnchor, setWeekAnchor] = useState<DateTime>(() =>
+    DateTime.now().setZone(TENANT_TIMEZONE).startOf("week"),
+  );
+  const [rescheduling, setRescheduling] = useState<ReschedulingTarget | null>(
+    null,
+  );
+
+  // Calendar view auto-derives its date window from the visible week, so
+  // the query refetches whenever the user navigates. List view uses the
+  // manual filter inputs.
+  const effectiveDates = useMemo(() => {
+    if (view === "calendar") {
+      return {
+        fromDate: weekAnchor.toISODate() ?? undefined,
+        toDate: weekAnchor.plus({ days: 6 }).toISODate() ?? undefined,
+      };
+    }
+    return {
+      fromDate: filters.fromDate || undefined,
+      toDate: filters.toDate || undefined,
+    };
+  }, [view, weekAnchor, filters.fromDate, filters.toDate]);
 
   const staff = useQuery({
     queryKey: ["business-staff"],
     queryFn: () => businessApi.staff.list(),
   });
+
   const bookings = useQuery({
-    queryKey: ["business-bookings-list", filters],
+    queryKey: [
+      "business-bookings-list",
+      effectiveDates,
+      filters.staffMemberId,
+      filters.status,
+    ],
     queryFn: () =>
       businessApi.bookings.list({
-        fromDate: filters.fromDate || undefined,
-        toDate: filters.toDate || undefined,
+        fromDate: effectiveDates.fromDate,
+        toDate: effectiveDates.toDate,
         staffMemberId: filters.staffMemberId || undefined,
         status: filters.status || undefined,
         pageSize: 100,
@@ -78,7 +112,7 @@ export default function BusinessBookingsPage() {
     onError: (e) => toast.error(errorMessage(e)),
   });
 
-  async function onCancel(bookingId: string) {
+  async function onCancel(b: BusinessBooking) {
     const ok = await confirm({
       title: "Cancel this booking?",
       description: "The customer will be notified (once notifications ship).",
@@ -86,7 +120,7 @@ export default function BusinessBookingsPage() {
       cancelText: "Keep it",
       tone: "destructive",
     });
-    if (ok) cancel.mutate(bookingId);
+    if (ok) cancel.mutate(b.id);
   }
 
   function startReschedule(b: BusinessBooking) {
@@ -100,24 +134,50 @@ export default function BusinessBookingsPage() {
   }
 
   const items = bookings.data?.items ?? [];
-  const grouped = groupByDay(items, tenantTimezone);
+
+  // Live counts for the description — gives the page a sense of pulse
+  // without needing a separate "today" query.
+  const counts = useMemo(() => summarise(items, TENANT_TIMEZONE), [items]);
 
   return (
     <>
-      <PageHeading
+      <PageHeader
         title="Bookings"
-        description="All confirmed and historical bookings for this tenant."
+        description={
+          counts.total === 0 ? (
+            "No bookings yet."
+          ) : (
+            <span className="tabular-nums">
+              <strong className="text-foreground font-semibold">
+                {counts.today}
+              </strong>{" "}
+              today
+              <span className="text-border mx-2">·</span>
+              <strong className="text-foreground font-semibold">
+                {counts.upcoming}
+              </strong>{" "}
+              upcoming
+              <span className="text-border mx-2">·</span>
+              <strong className="text-foreground font-semibold">
+                {counts.total}
+              </strong>{" "}
+              in view
+            </span>
+          )
+        }
+        actions={<ViewToggle value={view} onChange={setView} />}
       />
 
-      <FilterRow
+      <FilterBar
+        view={view}
         filters={filters}
         setFilters={setFilters}
         staff={staff.data ?? []}
       />
 
-      {bookings.isLoading && <BookingsSkeleton />}
+      {bookings.isLoading && <BookingsSkeleton view={view} />}
 
-      {bookings.data && items.length === 0 && (
+      {bookings.data && items.length === 0 && view === "list" && (
         <EmptyState
           icon={CalendarDays}
           title="No bookings match"
@@ -140,93 +200,23 @@ export default function BusinessBookingsPage() {
         />
       )}
 
-      {/* MOBILE: grouped card list */}
-      {items.length > 0 && (
-        <div className="space-y-6 md:hidden">
-          {grouped.map(({ key, label, rows }) => (
-            <section key={key} className="space-y-2">
-              <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground px-1">
-                {label}
-              </h2>
-              <div className="space-y-2">
-                {rows.map((b) => (
-                  <BookingMobileCard
-                    key={b.id}
-                    booking={b}
-                    timezone={tenantTimezone}
-                    onCancel={() => onCancel(b.id)}
-                    onReschedule={() => startReschedule(b)}
-                  />
-                ))}
-              </div>
-            </section>
-          ))}
-        </div>
+      {!bookings.isLoading && view === "list" && items.length > 0 && (
+        <BookingsListView
+          bookings={items}
+          timezone={TENANT_TIMEZONE}
+          onCancel={onCancel}
+          onReschedule={startReschedule}
+        />
       )}
 
-      {/* DESKTOP: data table */}
-      {items.length > 0 && (
-        <div className="hidden md:block rounded-2xl border border-border bg-card overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/50 border-b border-border">
-              <tr>
-                <th className="text-left p-3 font-medium text-foreground">When</th>
-                <th className="text-left p-3 font-medium text-foreground">Service</th>
-                <th className="text-left p-3 font-medium text-foreground">Staff</th>
-                <th className="text-left p-3 font-medium text-foreground">Customer</th>
-                <th className="text-left p-3 font-medium text-foreground">Status</th>
-                <th className="p-3" />
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((b) => (
-                <tr key={b.id} className="border-b border-border last:border-0">
-                  <td className="p-3 whitespace-nowrap font-mono text-xs text-foreground tabular-nums">
-                    {DateTime.fromISO(b.startAt).toFormat("yyyy-LL-dd HH:mm")}
-                  </td>
-                  <td className="p-3">{b.service.name}</td>
-                  <td className="p-3 text-muted-foreground">
-                    {b.staffMember.displayName}
-                  </td>
-                  <td className="p-3">
-                    <p className="font-medium">
-                      {b.customer.firstName} {b.customer.lastName}
-                    </p>
-                    {b.customer.phone && (
-                      <p className="text-xs text-muted-foreground">
-                        {b.customer.phone}
-                      </p>
-                    )}
-                  </td>
-                  <td className="p-3">
-                    <StatusBadge status={b.status} />
-                  </td>
-                  <td className="p-3 text-right">
-                    {(b.status === "pending" || b.status === "confirmed") && (
-                      <div className="flex justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => startReschedule(b)}
-                        >
-                          Reschedule
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-destructive hover:bg-destructive/10"
-                          onClick={() => onCancel(b.id)}
-                        >
-                          Cancel
-                        </Button>
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      {!bookings.isLoading && view === "calendar" && (
+        <BookingsWeekCalendar
+          bookings={items}
+          timezone={TENANT_TIMEZONE}
+          weekAnchor={weekAnchor}
+          onWeekAnchorChange={setWeekAnchor}
+          onSelect={startReschedule}
+        />
       )}
 
       {rescheduling && tenantSlug && (
@@ -240,7 +230,7 @@ export default function BusinessBookingsPage() {
           }}
           bookingId={rescheduling.id}
           tenantSlug={tenantSlug}
-          tenantTimezone={tenantTimezone}
+          tenantTimezone={TENANT_TIMEZONE}
           serviceId={rescheduling.serviceId}
           staffMemberId={rescheduling.staffMemberId}
           onSubmit={(newStartAt) =>
@@ -258,158 +248,180 @@ export default function BusinessBookingsPage() {
 }
 
 // ===========================================================================
-// FILTER ROW
+// VIEW TOGGLE
 // ===========================================================================
 
-function FilterRow({
+function ViewToggle({
+  value,
+  onChange,
+}: {
+  value: View;
+  onChange: (next: View) => void;
+}) {
+  return (
+    <Tabs value={value} onValueChange={(v) => onChange(v as View)}>
+      <TabsList className="h-10">
+        <TabsTrigger value="list" className="gap-2">
+          <List className="h-4 w-4" aria-hidden />
+          List
+        </TabsTrigger>
+        <TabsTrigger value="calendar" className="gap-2">
+          <CalendarRange className="h-4 w-4" aria-hidden />
+          Calendar
+        </TabsTrigger>
+      </TabsList>
+    </Tabs>
+  );
+}
+
+// ===========================================================================
+// FILTER BAR
+// ===========================================================================
+
+function FilterBar({
+  view,
   filters,
   setFilters,
   staff,
 }: {
+  view: View;
   filters: { fromDate: string; toDate: string; staffMemberId: string; status: string };
   setFilters: (next: typeof filters) => void;
   staff: { id: string; displayName: string }[];
 }) {
+  const hasActive =
+    !!filters.fromDate ||
+    !!filters.toDate ||
+    !!filters.staffMemberId ||
+    !!filters.status;
+
+  function clear() {
+    setFilters({ fromDate: "", toDate: "", staffMemberId: "", status: "" });
+  }
+
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-      <div>
-        <Label htmlFor="from">From</Label>
-        <Input
-          id="from"
-          type="date"
-          value={filters.fromDate}
-          onChange={(e) => setFilters({ ...filters, fromDate: e.target.value })}
-        />
+    <div className="rounded-2xl border border-border bg-card p-3 sm:p-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <FilterField label="From">
+          <Input
+            type="date"
+            value={filters.fromDate}
+            disabled={view === "calendar"}
+            onChange={(e) =>
+              setFilters({ ...filters, fromDate: e.target.value })
+            }
+            className={cn(view === "calendar" && "opacity-60")}
+          />
+        </FilterField>
+        <FilterField label="To">
+          <Input
+            type="date"
+            value={filters.toDate}
+            disabled={view === "calendar"}
+            onChange={(e) =>
+              setFilters({ ...filters, toDate: e.target.value })
+            }
+            className={cn(view === "calendar" && "opacity-60")}
+          />
+        </FilterField>
+        <FilterField label="Staff">
+          <Select
+            value={filters.staffMemberId || "__all"}
+            onValueChange={(v) =>
+              setFilters({
+                ...filters,
+                staffMemberId: v === "__all" ? "" : v,
+              })
+            }
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="All staff" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all">All staff</SelectItem>
+              {staff.map((s) => (
+                <SelectItem key={s.id} value={s.id}>
+                  {s.displayName}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </FilterField>
+        <FilterField label="Status">
+          <Select
+            value={filters.status || "__any"}
+            onValueChange={(v) =>
+              setFilters({ ...filters, status: v === "__any" ? "" : v })
+            }
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Any" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__any">Any</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="confirmed">Confirmed</SelectItem>
+              <SelectItem value="cancelled">Cancelled</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="no_show">No show</SelectItem>
+            </SelectContent>
+          </Select>
+        </FilterField>
       </div>
-      <div>
-        <Label htmlFor="to">To</Label>
-        <Input
-          id="to"
-          type="date"
-          value={filters.toDate}
-          onChange={(e) => setFilters({ ...filters, toDate: e.target.value })}
-        />
-      </div>
-      <div>
-        <Label htmlFor="staff">Staff</Label>
-        <Select
-          value={filters.staffMemberId || "__all"}
-          onValueChange={(v) =>
-            setFilters({ ...filters, staffMemberId: v === "__all" ? "" : v })
-          }
-        >
-          <SelectTrigger id="staff">
-            <SelectValue placeholder="All staff" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all">All staff</SelectItem>
-            {staff.map((s) => (
-              <SelectItem key={s.id} value={s.id}>
-                {s.displayName}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <div>
-        <Label htmlFor="status">Status</Label>
-        <Select
-          value={filters.status || "__any"}
-          onValueChange={(v) =>
-            setFilters({ ...filters, status: v === "__any" ? "" : v })
-          }
-        >
-          <SelectTrigger id="status">
-            <SelectValue placeholder="Any" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__any">Any</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="confirmed">Confirmed</SelectItem>
-            <SelectItem value="cancelled">Cancelled</SelectItem>
-            <SelectItem value="completed">Completed</SelectItem>
-            <SelectItem value="no_show">No show</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+
+      {(hasActive || view === "calendar") && (
+        <div className="flex items-center justify-between gap-2 pt-3 mt-3 border-t border-border">
+          <p className="text-xs text-muted-foreground">
+            {view === "calendar"
+              ? "Dates are driven by the calendar week — use the toolbar above the grid to navigate."
+              : "Filters apply to both list and calendar views (date overrides for calendar)."}
+          </p>
+          {hasActive && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clear}
+              className="text-muted-foreground"
+            >
+              <X className="h-3.5 w-3.5 mr-1" aria-hidden />
+              Clear
+            </Button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FilterField({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  const id = label.toLowerCase();
+  return (
+    <div className="space-y-1">
+      <Label
+        htmlFor={id}
+        className="text-[11px] uppercase tracking-wide text-muted-foreground"
+      >
+        {label}
+      </Label>
+      {children}
     </div>
   );
 }
 
 // ===========================================================================
-// MOBILE CARD
+// SKELETONS / SUMMARY HELPERS
 // ===========================================================================
 
-function BookingMobileCard({
-  booking,
-  timezone,
-  onCancel,
-  onReschedule,
-}: {
-  booking: BusinessBooking;
-  timezone: string;
-  onCancel: () => void;
-  onReschedule: () => void;
-}) {
-  const dt = DateTime.fromISO(booking.startAt, { zone: "utc" }).setZone(timezone);
-  const modifiable = booking.status === "pending" || booking.status === "confirmed";
-  return (
-    <article className="rounded-2xl border border-border bg-card p-4 space-y-3">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-base font-semibold text-foreground truncate">
-            {booking.service.name}
-          </p>
-          <p className="text-sm text-muted-foreground tabular-nums">
-            {dt.toFormat("ccc, LLL d · HH:mm")}
-          </p>
-        </div>
-        <StatusBadge status={booking.status} />
-      </div>
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <User className="h-4 w-4" aria-hidden />
-        <span className="truncate">
-          {booking.customer.firstName} {booking.customer.lastName}
-          <span className="text-muted-foreground/70"> · {booking.staffMember.displayName}</span>
-        </span>
-      </div>
-      {booking.customer.phone && (
-        <a
-          href={`tel:${booking.customer.phone}`}
-          className="block text-xs font-medium text-primary"
-        >
-          {booking.customer.phone}
-        </a>
-      )}
-      {modifiable && (
-        <div className="flex gap-2 pt-1">
-          <Button
-            variant="secondary"
-            size="sm"
-            className="flex-1"
-            onClick={onReschedule}
-          >
-            Reschedule
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="flex-1 text-destructive hover:bg-destructive/10"
-            onClick={onCancel}
-          >
-            Cancel
-          </Button>
-        </div>
-      )}
-    </article>
-  );
-}
-
-// ===========================================================================
-// HELPERS
-// ===========================================================================
-
-function BookingsSkeleton() {
+function BookingsSkeleton({ view }: { view: View }) {
+  if (view === "calendar") {
+    return <Skeleton className="h-[36rem] rounded-2xl" />;
+  }
   return (
     <div className="space-y-3">
       {Array.from({ length: 4 }).map((_, i) => (
@@ -419,36 +431,17 @@ function BookingsSkeleton() {
   );
 }
 
-interface GroupedDay {
-  key: string;
-  label: string;
-  rows: BusinessBooking[];
-}
-
-function groupByDay(items: BusinessBooking[], timezone: string): GroupedDay[] {
+function summarise(items: BusinessBooking[], timezone: string) {
   const now = DateTime.now().setZone(timezone);
   const today = now.toISODate();
-  const tomorrow = now.plus({ days: 1 }).toISODate();
-  const buckets = new Map<string, BusinessBooking[]>();
+  let todayCount = 0;
+  let upcoming = 0;
   for (const b of items) {
-    const key = DateTime.fromISO(b.startAt, { zone: "utc" })
-      .setZone(timezone)
-      .toISODate();
-    if (!key) continue;
-    const list = buckets.get(key) ?? [];
-    list.push(b);
-    buckets.set(key, list);
+    const dt = DateTime.fromISO(b.startAt, { zone: "utc" }).setZone(timezone);
+    if (dt.toISODate() === today) todayCount++;
+    if (dt > now && (b.status === "pending" || b.status === "confirmed")) {
+      upcoming++;
+    }
   }
-  return Array.from(buckets.entries())
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([key, rows]) => {
-      const dt = DateTime.fromISO(key, { zone: timezone }).setLocale("en-US");
-      const label =
-        key === today
-          ? "Today"
-          : key === tomorrow
-            ? "Tomorrow"
-            : dt.toFormat("cccc, LLL d");
-      return { key, label, rows };
-    });
+  return { today: todayCount, upcoming, total: items.length };
 }
